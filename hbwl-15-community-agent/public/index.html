@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#286840">
+<title>15栋一站式社区智能体 · 湖北文理学院计算机工程学院</title>
+<link rel="icon" href="/assets/xiaohui.png">
+<link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/entry.css">
+</head>
+<body class="entry-body">
+
+<!-- 直接双击 HTML 文件打开时（file:// 协议）样式与图片无法加载，
+     这里给出明确指引，避免误以为程序坏了。 -->
+<div id="fileProtocolWarn" class="file-warn" hidden>
+  <h2>⚠️ 请通过服务器访问，不要直接双击网页文件</h2>
+  <p>当前是以「本地文件」方式打开的（地址栏以 <code>file://</code> 开头），
+     因此样式表与校徽图片无法加载，页面会显示成没有格式的样子。</p>
+  <p><strong>正确的打开方式：</strong></p>
+  <ol>
+    <li>双击项目文件夹里的 <code>启动.bat</code>（会自动启动服务并打开浏览器）</li>
+    <li>或在文件夹内执行 <code>node server.js</code>，然后在浏览器访问
+        <code>http://localhost:8080</code></li>
+  </ol>
+  <p class="file-warn-path" id="fileWarnPath"></p>
+</div>
+
+<script>
+// 在样式表加载前就检测，避免用户先看到无样式页面
+(function () {
+  if (location.protocol !== 'file:') return;
+  var el = document.getElementById('fileProtocolWarn');
+  if (!el) return;
+  el.hidden = false;
+  var p = document.getElementById('fileWarnPath');
+  if (p) p.textContent = '当前地址：' + location.href;
+  // 无样式环境下也保证这段提示可读
+  el.setAttribute('style',
+    'max-width:760px;margin:40px auto;padding:28px 32px;border:2px solid #b91c1c;' +
+    'border-radius:12px;background:#fef2f2;color:#1f2a24;font-family:sans-serif;' +
+    'line-height:1.9;font-size:16px');
+  var codes = el.querySelectorAll('code');
+  for (var i = 0; i < codes.length; i++) {
+    codes[i].setAttribute('style',
+      'background:#fff;border:1px solid #e2e8e4;border-radius:4px;padding:1px 6px;' +
+      'font-family:monospace;font-size:14px');
+  }
+  var path = document.getElementById('fileWarnPath');
+  if (path) path.setAttribute('style', 'color:#5f6b64;font-size:13px;word-break:break-all');
+})();
+</script>
+
+<div class="entry-wrap">
+
+  <!-- 校标 -->
+  <header class="entry-head">
+    <img src="/assets/xiaobiao-heng.png" alt="湖北文理学院" class="entry-biaozhi">
+  </header>
+
+  <div class="entry-title">
+    <h1>15栋一站式社区智能体</h1>
+    <p class="motto">淡泊明志　宁静致远</p>
+    <p class="entry-sub">计算机工程学院 · 一站式学生社区</p>
+  </div>
+
+  <!-- 角色选择 -->
+  <main class="role-grid">
+
+    <a class="role-card role-student" href="/student">
+      <div class="role-icon">🎓</div>
+      <h2>学生端</h2>
+      <p class="role-desc">查询通知、咨询办事流程、了解活动与服务</p>
+      <ul class="role-feats">
+        <li>通知公告与截止时间</li>
+        <li>报修、心理、资助、教务办事指引</li>
+        <li>各部门联系方式与紧急求助</li>
+      </ul>
+      <span class="role-enter">进入学生端 →</span>
+    </a>
+
+    <a class="role-card role-teacher" href="/teacher">
+      <div class="role-icon">📋</div>
+      <h2>教师端</h2>
+      <p class="role-desc">维护知识库、审核待确认内容、查看问答数据</p>
+      <ul class="role-feats">
+        <li>数据看板：高频问题与知识缺口</li>
+        <li>发布通知、活动与常见问题</li>
+        <li>待确认内容审核与来源管理</li>
+      </ul>
+      <span class="role-enter">进入教师端 →</span>
+    </a>
+
+  </main>
+
+  <footer class="entry-foot">
+    <div class="entry-foot-line">
+      <span>湖北省襄阳市隆中路296号</span>
+      <span class="sep">|</span>
+      <span>学院综合办 0710-3593152</span>
+      <span class="sep">|</span>
+      <span>紧急求助 110 / 119 / 120</span>
+    </div>
+    <p class="entry-note">
+      知识库内容来自学校及各二级单位官方公开信息，并标注来源与核实状态。
+    </p>
+  </footer>
+
+</div>
+
+</body>
+</html>

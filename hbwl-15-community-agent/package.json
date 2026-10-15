@@ -1,0 +1,17 @@
+{
+  "name": "hbwl-15-community-agent",
+  "version": "1.0.0",
+  "private": true,
+  "description": "湖北文理学院计算机工程学院15栋一站式学生社区智能体（大厅终端 + 手机端双入口）",
+  "type": "commonjs",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "check": "node scripts/selfcheck.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {}
+}

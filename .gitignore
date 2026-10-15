@@ -1,0 +1,26 @@
+# ---- 依赖 ----
+node_modules/
+
+# ---- 本地配置（含教师端口令，禁止提交到公开仓库）----
+hbwl-15-community-agent/data/_config.json
+
+# ---- 运行日志（由教师端自动生成）----
+hbwl-15-community-agent/data/_logs/
+
+# ---- Windows ----
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# ---- 编辑器/系统 ----
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*~
+
+# ---- 临时文件 ----
+*.tmp
+*.bak
+*.log

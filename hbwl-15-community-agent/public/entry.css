@@ -1,0 +1,182 @@
+/* ============================================================
+   入口页 · 角色选择
+   ============================================================ */
+
+.entry-body {
+  display: block;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background:
+    radial-gradient(circle at 12% 8%, rgba(40, 104, 64, .07) 0%, transparent 42%),
+    radial-gradient(circle at 88% 92%, rgba(0, 144, 72, .06) 0%, transparent 42%),
+    var(--bg);
+  min-height: 100%;
+}
+
+.entry-wrap {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: clamp(24px, 4vh, 48px) clamp(18px, 4vw, 40px) 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100%;
+}
+
+/* ---- 校标 ---- */
+.entry-head { margin-bottom: clamp(18px, 3vh, 32px); }
+.entry-biaozhi {
+  height: clamp(52px, 7vh, 74px);
+  width: auto;
+  display: block;
+  /* 校标为白底图片，与页面背景自然衔接 */
+  mix-blend-mode: multiply;
+}
+
+/* ---- 标题 ---- */
+.entry-title { text-align: center; margin-bottom: clamp(24px, 4vh, 40px); }
+.entry-title h1 {
+  font-size: clamp(1.5rem, 3.4vw, 2.3rem);
+  font-weight: 600;
+  color: var(--hbuas-green-deep);
+  letter-spacing: .02em;
+  line-height: 1.3;
+}
+.entry-title .motto {
+  font-family: var(--font-serif);
+  font-size: clamp(.88rem, 1.5vw, 1.05rem);
+  color: var(--hbuas-green);
+  letter-spacing: .34em;
+  margin-top: 12px;
+  text-indent: .34em;   /* 抵消末字后多出的字距，视觉居中 */
+}
+.entry-title .entry-sub {
+  font-size: clamp(.8rem, 1.3vw, .92rem);
+  color: var(--text-dim);
+  margin-top: 10px;
+  letter-spacing: .06em;
+}
+
+/* ---- 角色卡片 ---- */
+.role-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(16px, 2.4vw, 28px);
+  width: 100%;
+  max-width: 860px;
+}
+
+.role-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: clamp(22px, 3vw, 32px);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  text-decoration: none;
+  color: inherit;
+  box-shadow: var(--shadow);
+  transition: transform .18s, box-shadow .18s, border-color .18s;
+  overflow: hidden;
+}
+/* 顶部色条：学生端用亮绿，教师端用深绿 */
+.role-card::before {
+  content: "";
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 4px;
+}
+.role-student::before { background: var(--hbuas-accent); }
+.role-teacher::before { background: var(--hbuas-green-dark); }
+
+.role-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--hbuas-green);
+}
+.role-card:active { transform: translateY(-1px); }
+
+.role-icon {
+  font-size: 2.1em;
+  line-height: 1;
+  margin-bottom: 14px;
+}
+.role-card h2 {
+  font-size: clamp(1.1rem, 1.9vw, 1.32rem);
+  font-weight: 600;
+  color: var(--hbuas-green-deep);
+  margin-bottom: 8px;
+}
+.role-desc {
+  font-size: .87em;
+  color: var(--text-dim);
+  line-height: 1.65;
+  margin-bottom: 16px;
+}
+
+.role-feats {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 22px;
+  flex: 1;
+}
+.role-feats li {
+  font-size: .82em;
+  color: var(--text-dim);
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  line-height: 1.5;
+}
+.role-feats li::before {
+  content: "";
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--hbuas-green);
+  flex-shrink: 0;
+  margin-top: .55em;
+}
+
+.role-enter {
+  font-size: .87em;
+  font-weight: 600;
+  color: var(--hbuas-green);
+  letter-spacing: .02em;
+  transition: gap .18s;
+}
+.role-card:hover .role-enter { color: var(--hbuas-green-dark); }
+
+/* ---- 页脚 ---- */
+.entry-foot {
+  margin-top: auto;
+  padding-top: clamp(28px, 5vh, 52px);
+  text-align: center;
+  width: 100%;
+}
+.entry-foot-line {
+  font-size: .78em;
+  color: var(--text-dim);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  justify-content: center;
+  align-items: center;
+}
+.entry-foot-line .sep { color: var(--border-strong); }
+.entry-note {
+  font-size: .74em;
+  color: var(--text-light);
+  margin-top: 10px;
+  line-height: 1.6;
+}
+
+/* ---- 手机端 ---- */
+@media (max-width: 720px) {
+  .role-grid { grid-template-columns: 1fr; max-width: 460px; }
+  .role-card { padding: 20px; }
+  .role-icon { font-size: 1.8em; margin-bottom: 10px; }
+  .entry-foot-line { flex-direction: column; gap: 4px; }
+  .entry-foot-line .sep { display: none; }
+}
