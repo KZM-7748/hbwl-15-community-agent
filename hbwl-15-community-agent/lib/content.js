@@ -21,12 +21,25 @@ const path = require('path');
 const DATA_DIR = path.join(__dirname, '..', 'data');
 const LOG_DIR = path.join(__dirname, '..', 'data', '_logs');
 
+/** 问答日志保留天数（超出自动清理，避免无限增长） */
+const LOG_RETAIN_DAYS = 90;
+
 const FILES = {
   notices: 'notices.json',
   faqs: 'faq.json',
   activities: 'activities.json',
   venues: 'venues.json',
 };
+
+/**
+ * 本地日期 YYYY-MM-DD。
+ * 不能用 toISOString()——那是 UTC，东八区凌晨会得到「昨天」，导致日志文件按错误的日期命名。
+ */
+function todayLocal(d = new Date()) {
+  return `${d.getFullYear()}-` +
+    `${String(d.getMonth() + 1).padStart(2, '0')}-` +
+    `${String(d.getDate()).padStart(2, '0')}`;
+}
 
 function ensureDirs() {
   if (!fs.existsSync(LOG_DIR)) fs.mkdirSync(LOG_DIR, { recursive: true });
@@ -62,19 +75,34 @@ class ContentManager {
     );
   }
 
-  /** 校验一条内容，返回错误信息数组 */
+  /**
+   * 校验一条内容，返回错误信息数组
+   *
+   * 注意：四类内容的必填字段不同，必须分开判断。
+   * 早期版本把 notices 与 activities 合在一个 else 分支里，都要求 content，
+   * 而活动实际用的是 summary / detail —— 结果教师端**无法发布任何活动**。
+   */
   validate(kind, item, { requireId = false } = {}) {
     const errs = [];
+    const filled = (v) => v != null && String(v).trim() !== '';
+
     if (requireId && !item.id) errs.push('缺少 id');
 
     if (kind === 'faqs') {
-      if (!item.question || !String(item.question).trim()) errs.push('缺少 question（问题）');
-      if (!item.answer || !String(item.answer).trim()) errs.push('缺少 answer（回答）');
+      if (!filled(item.question)) errs.push('缺少 question（问题）');
+      if (!filled(item.answer)) errs.push('缺少 answer（回答）');
     } else if (kind === 'venues') {
-      if (!item.name || !String(item.name).trim()) errs.push('缺少 name（场所名称）');
+      if (!filled(item.name)) errs.push('缺少 name（场所名称）');
+    } else if (kind === 'activities') {
+      if (!filled(item.title)) errs.push('缺少 title（活动名称）');
+      // 活动正文允许用 summary 或 detail 任一（与数据文件的实际字段一致）
+      if (!filled(item.summary) && !filled(item.detail)) {
+        errs.push('缺少 summary 或 detail（活动简介 / 详细说明）');
+      }
     } else {
-      if (!item.title || !String(item.title).trim()) errs.push('缺少 title（标题）');
-      if (!item.content || !String(item.content).trim()) errs.push('缺少 content（正文）');
+      // notices
+      if (!filled(item.title)) errs.push('缺少 title（标题）');
+      if (!filled(item.content)) errs.push('缺少 content（正文）');
     }
 
     // 与自检脚本同一套溯源规则
@@ -181,22 +209,59 @@ class ContentManager {
 
   // ---------- 问答日志与看板 ----------
 
-  /** 记录一次问答（用于统计高频问题） */
-  logQuery(question, intent, verified) {
+  /**
+   * 记录一次问答（用于统计高频问题）
+   *
+   * 同时做日志轮转：只保留最近 LOG_RETAIN_DAYS 天的文件。
+   * 不轮转的话，日志会无限增长——按一天 500 条算，
+   * 三年就是 50 万条、46 MB，看板聚合要 0.5 秒（实测见 benchmark.js）。
+   */
+  logQuery(question, intent, verified, lowConfidence) {
     try {
       ensureDirs();
-      const day = new Date().toISOString().slice(0, 10);
+      const day = todayLocal();
       const file = path.join(LOG_DIR, `queries-${day}.jsonl`);
       const rec = JSON.stringify({
         t: Date.now(),
         q: String(question).slice(0, 200),
         intent,
         verified: verified !== false,
+        // 低置信度：系统给了回答，但可能答非所问（见 agent.js 的阈值说明）
+        low: lowConfidence === true,
       });
       fs.appendFileSync(file, rec + '\n', 'utf8');
+
+      // 每天最多清理一次，避免每次写日志都扫目录
+      if (this._lastRotate !== day) {
+        this._lastRotate = day;
+        this.rotateLogs();
+      }
     } catch {
       // 日志失败不影响问答
     }
+  }
+
+  /**
+   * 清理过期日志文件。保留最近 LOG_RETAIN_DAYS 天。
+   * @returns {number} 删除的文件数
+   */
+  rotateLogs(retainDays = LOG_RETAIN_DAYS) {
+    ensureDirs();
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - retainDays);
+    const cutoffStr = `${cutoff.getFullYear()}-` +
+      `${String(cutoff.getMonth() + 1).padStart(2, '0')}-` +
+      `${String(cutoff.getDate()).padStart(2, '0')}`;
+
+    let removed = 0;
+    for (const f of fs.readdirSync(LOG_DIR)) {
+      const m = f.match(/^queries-(\d{4}-\d{2}-\d{2})\.jsonl$/);
+      if (!m) continue;
+      if (m[1] < cutoffStr) {
+        try { fs.unlinkSync(path.join(LOG_DIR, f)); removed++; } catch { /* ignore */ }
+      }
+    }
+    return removed;
   }
 
   /** 读取最近 N 天的问答日志 */
@@ -213,6 +278,55 @@ class ContentManager {
       for (const ln of lines) {
         if (!ln.trim()) continue;
         try { out.push(JSON.parse(ln)); } catch { /* 跳过损坏行 */ }
+      }
+    }
+    return out;
+  }
+
+  /**
+   * 记录学生对某条回答的反馈（有用 / 没用）。
+   *
+   * 为什么需要：看板目前只知道「哪些问题没答上」，
+   * 不知道「哪些问题答了但答得不对」。后者更隐蔽——
+   * 同学看到一段不相关的内容，可能就默默走了，不会换个说法再问。
+   *
+   * @param {object} p
+   * @param {string} p.question 原问题
+   * @param {boolean} p.helpful 是否有用
+   * @param {string} [p.intent] 当时的意图
+   * @param {string} [p.answerHead] 回答开头，便于教师定位是哪条内容
+   */
+  logFeedback({ question, helpful, intent, answerHead }) {
+    try {
+      ensureDirs();
+      const day = todayLocal();
+      const file = path.join(LOG_DIR, `feedback-${day}.jsonl`);
+      fs.appendFileSync(file, JSON.stringify({
+        t: Date.now(),
+        q: String(question || '').slice(0, 200),
+        helpful: !!helpful,
+        intent: intent || '',
+        head: String(answerHead || '').slice(0, 80),
+      }) + '\n', 'utf8');
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /** 读取反馈记录 */
+  readFeedback(days = 30) {
+    ensureDirs();
+    const out = [];
+    const now = Date.now();
+    for (const f of fs.readdirSync(LOG_DIR)) {
+      const m = f.match(/^feedback-(\d{4}-\d{2}-\d{2})\.jsonl$/);
+      if (!m) continue;
+      const age = (now - new Date(m[1] + 'T00:00:00Z').getTime()) / 86400000;
+      if (age > days) continue;
+      for (const ln of fs.readFileSync(path.join(LOG_DIR, f), 'utf8').split('\n')) {
+        if (!ln.trim()) continue;
+        try { out.push(JSON.parse(ln)); } catch { /* ignore */ }
       }
     }
     return out;
@@ -250,18 +364,75 @@ class ContentManager {
       .sort((a, b) => b.n - a.n)
       .slice(0, 10);
 
-    // 未命中问题：这些是知识库缺口，最有维护价值
-    const missed = new Map();
+    // 学生反馈记录（待补充清单与满意度统计都要用）
+    const feedback = this.readFeedback(days);
+
+    // ---- 待补充清单 ----
+    //
+    // 把两种「需要老师补充内容」的情况合并成一个列表：
+    //   1. 未命中：智能体答不上来（intent=fallback）
+    //   2. 被点「没用」：答了，但同学认为不对
+    //
+    // 第 2 类更隐蔽也更有价值。实测过一个例子：
+    //   「校园网密码忘了怎么重置」命中了「校园网与信息化服务入口」这条通知
+    //   （讲的是入口网址），得分 10.26，系统认为答上了；
+    //   但那条根本没讲密码怎么重置 —— 同学的问题实际没解决。
+    //   如果只看 fallback，这类缺口永远进不了待补充清单。
+    //
+    // 合并后按「缺口强度」排序：被点没用权重更高（说明答了但答错），
+    // 未命中次之（说明没答）。
+    const gapMap = new Map();
+
     for (const l of logs) {
-      if (l.intent === 'fallback') {
-        const key = String(l.q || '').trim();
-        if (!key) continue;
-        missed.set(key, (missed.get(key) || 0) + 1);
-      }
+      if (l.intent !== 'fallback') continue;
+      const key = String(l.q || '').trim();
+      if (!key) continue;
+      const cur = gapMap.get(key) || { q: key, missed: 0, unhelpful: 0, low: 0, head: '', intents: new Set() };
+      cur.missed++;
+      cur.intents.add('fallback');
+      gapMap.set(key, cur);
     }
-    const topMissed = [...missed.entries()]
-      .map(([q, n]) => ({ q, n }))
-      .sort((a, b) => b.n - a.n)
+
+    // 低置信度：系统给了回答但可能答非所问（如「校车几点发车」答成「宿舍几点熄灯」）
+    for (const l of logs) {
+      if (!l.low) continue;
+      const key = String(l.q || '').trim();
+      if (!key) continue;
+      const cur = gapMap.get(key) || { q: key, missed: 0, unhelpful: 0, low: 0, head: '', intents: new Set() };
+      cur.low++;
+      if (l.intent) cur.intents.add(l.intent);
+      gapMap.set(key, cur);
+    }
+
+    for (const fb of feedback) {
+      if (fb.helpful) continue;
+      const key = String(fb.q || '').trim();
+      if (!key) continue;
+      const cur = gapMap.get(key) || { q: key, missed: 0, unhelpful: 0, low: 0, head: '', intents: new Set() };
+      cur.unhelpful++;
+      if (!cur.head && fb.head) cur.head = fb.head;
+      if (fb.intent) cur.intents.add(fb.intent);
+      gapMap.set(key, cur);
+    }
+
+    // 按权重排序：被点「没用」3 分（答了但错），低置信度 2 分（可能答错），未命中 1 分（没答）
+    const pendingAnswers = [...gapMap.values()]
+      .map((x) => ({
+        q: x.q,
+        missed: x.missed,
+        unhelpful: x.unhelpful,
+        low: x.low,
+        score: x.unhelpful * 3 + x.low * 2 + x.missed,
+        head: x.head,
+        intents: [...x.intents],
+      }))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 12);
+
+    // 保留原有的 topMissed（仅未命中），兼容旧逻辑与既有测试
+    const topMissed = pendingAnswers
+      .filter((x) => x.missed > 0)
+      .map((x) => ({ q: x.q, n: x.missed }))
       .slice(0, 10);
 
     // 意图分布
@@ -269,6 +440,17 @@ class ContentManager {
     for (const l of logs) {
       intents.set(l.intent, (intents.get(l.intent) || 0) + 1);
     }
+
+    // 学生反馈统计
+    let helpful = 0;
+    let notHelpful = 0;
+    for (const fb of feedback) {
+      if (fb.helpful) helpful++; else notHelpful++;
+    }
+    const topUnhelpful = pendingAnswers
+      .filter((x) => x.unhelpful > 0)
+      .map((x) => ({ q: x.q, n: x.unhelpful, head: x.head, intent: x.intents[0] || '' }))
+      .slice(0, 10);
 
     return {
       counts,
@@ -282,6 +464,17 @@ class ContentManager {
         topQuestions,
         topMissed,
         intents: [...intents.entries()].map(([name, n]) => ({ name, n })).sort((a, b) => b.n - a.n),
+      },
+      // 待补充清单：未命中 + 被点「没用」，合并后按缺口强度排序
+      pendingAnswers,
+      feedback: {
+        days,
+        total: feedback.length,
+        helpful,
+        notHelpful,
+        // 满意度：仅有反馈时计算，无反馈返回 null
+        satisfaction: feedback.length ? Math.round((helpful / feedback.length) * 100) : null,
+        topUnhelpful,
       },
       sourceCount: this.validSourceIds.size,
     };
@@ -301,4 +494,4 @@ class ContentManager {
   }
 }
 
-module.exports = { ContentManager, DATA_DIR, LOG_DIR, FILES };
+module.exports = { ContentManager, DATA_DIR, LOG_DIR, FILES, LOG_RETAIN_DAYS };

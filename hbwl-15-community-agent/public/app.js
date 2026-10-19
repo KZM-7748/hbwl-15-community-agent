@@ -45,6 +45,29 @@ function escapeHTML(s) {
   ));
 }
 
+/**
+ * 把电话号码变成可点击拨号的链接。
+ *
+ * 为什么需要：在手机上看到「0710-3593110」时，同学的本能是点一下直接拨。
+ * 纯文本电话号码点了没反应，得手动复制再拨号——在紧急场景（如报警）
+ * 这个摩擦是实实在在的。
+ *
+ * 只匹配固定电话与手机号形态，避免把日期、门牌号等误转成链接。
+ * 注意：必须在 escapeHTML 之后调用（此时没有特殊字符干扰匹配）。
+ */
+function linkifyPhone(html) {
+  // 匹配 0710-3593110 / 07103593110 / 15797189019 / 400-123-4567 等
+  return html.replace(
+    /(?<![\w\-])((?:0\d{2,3}[-\s]?)?\d{7,8}|1[3-9]\d{9}|400[-\s]?\d{3}[-\s]?\d{4})(?![\w\-])/g,
+    (m) => {
+      const digits = m.replace(/[^\d]/g, '');
+      // 太长或太短都不像电话，跳过
+      if (digits.length < 7 || digits.length > 13) return m;
+      return `<a href="tel:${digits}" class="tel-link" title="点击拨号">${m}</a>`;
+    }
+  );
+}
+
 function renderMarkdown(text) {
   let html = escapeHTML(text);
 
@@ -54,6 +77,8 @@ function renderMarkdown(text) {
   html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
   // 分隔线
   html = html.replace(/^---+$/gm, '<hr>');
+  // 电话号 → 可点击拨号（放在粗体之后，避免破坏 <strong> 标签）
+  html = linkifyPhone(html);
 
   // 按行处理列表、表格与段落
   const lines = html.split('\n');
@@ -166,6 +191,39 @@ function addBotMessage(answer) {
       wrap.appendChild(b);
     }
     bubble.appendChild(wrap);
+  }
+
+  // 反馈按钮：只在有实际回答时出现（空输入不需要反馈）
+  if (answer.intent && answer.intent !== 'empty') {
+    const fb = document.createElement('div');
+    fb.className = 'feedback';
+    fb.innerHTML = `
+      <span class="fb-label">这个回答有帮助吗？</span>
+      <button class="fb-btn" type="button" data-helpful="1">👍 有用</button>
+      <button class="fb-btn" type="button" data-helpful="0">👎 没用</button>`;
+
+    const answerHead = String(answer.text || '').split('\n')[0].slice(0, 80);
+    // history 里最后一条 user 消息就是本次提问
+    const lastUser = [...history].reverse().find((h) => h.role === 'user');
+    const question = lastUser ? lastUser.content : '';
+
+    fb.querySelectorAll('.fb-btn').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const helpful = btn.dataset.helpful === '1';
+        // 立即给出反馈，不让用户等网络
+        fb.innerHTML = helpful
+          ? '<span class="fb-done">✓ 谢谢反馈</span>'
+          : '<span class="fb-done">✓ 已记录，会转给老师补充内容</span>';
+        try {
+          await fetch('/api/feedback', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ question, helpful, intent: answer.intent, answerHead }),
+          });
+        } catch { /* 反馈失败不影响使用 */ }
+      });
+    });
+    bubble.appendChild(fb);
   }
 
   messagesEl.appendChild(el);
@@ -357,7 +415,7 @@ async function loadStats() {
       <li><span>🏠</span> 服务场所 ${s.venues} 处</li>
       <li><span>✅</span> 已核实 ${s.verified} 条 / 待确认 ${s.unverified} 条</li>
       <li><span>📄</span> 来源 ${s.sourceCount} 个官方渠道</li>
-      <li><span>${s.llmEnabled ? '🧠' : '📴'}</span> ${s.llmEnabled ? '大模型增强已启用' : '离线检索模式'}</li>`;
+      <li><span>📴</span> 离线检索模式（本地知识库）</li>`;
   } catch {
     $('#statsList').innerHTML = '<li>统计信息暂不可用</li>';
   }

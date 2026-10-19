@@ -108,10 +108,10 @@
           <div id="topQuestions" class="list-box"></div>
         </div>
         <div class="panel">
-          <h3>未命中问题</h3>
+          <h3>待补充问题</h3>
           <p class="panel-sub">
-            智能体未能回答的问题 —— 这是知识库的缺口，最有维护价值。
-            建议把高频缺口补成 FAQ 或通知，命中率会直接提升。
+            智能体<b>答不上来</b>的问题，以及<b>答了但被同学点「没用」</b>的问题。
+            点「补充答案」可直接创建 FAQ —— 问题已自动填好，写完答案保存，同学下次问就能得到回答。
           </p>
           <div id="topMissed" class="list-box"></div>
         </div>
@@ -121,6 +121,16 @@
         <h3>意图分布</h3>
         <p class="panel-sub">同学都在问哪一类问题</p>
         <div id="intentDist" class="bar-box"></div>
+      </div>
+
+      <div class="panel">
+        <h3>学生反馈：被点「没用」的回答</h3>
+        <p class="panel-sub">
+          比「未命中」更隐蔽的问题 —— 智能体给出了回答，但同学认为不对。
+          这类问题往往说明内容过时、答非所问，或同学的真实意图没被理解。
+        </p>
+        <div id="feedbackSummary" class="fb-summary"></div>
+        <div id="topUnhelpful" class="list-box"></div>
       </div>
     </div>
 

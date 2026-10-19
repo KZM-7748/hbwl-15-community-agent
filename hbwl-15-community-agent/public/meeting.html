@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#286840">
+<title>会议工具 · 15栋一站式社区智能体</title>
+<link rel="icon" href="/assets/xiaohui.png">
+<link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/meeting.css">
+</head>
+<body class="meeting-body">
+
+<!-- ============ 顶栏 ============ -->
+<header class="topbar">
+  <div class="brand">
+    <img src="/assets/xiaohui.png" alt="湖北文理学院校徽" class="brand-logo">
+    <div class="brand-text">
+      <h1>社区会议工具</h1>
+      <div class="sub">
+        <span>湖北文理学院 · 计算机工程学院</span>
+        <span class="dot">·</span>
+        <span>淡泊明志 宁静致远</span>
+      </div>
+    </div>
+  </div>
+  <div class="topbar-actions">
+    <span class="role-chip">会议</span>
+    <a class="icon-btn" href="/teacher">教师端</a>
+    <a class="icon-btn" href="/student">学生端</a>
+    <a class="icon-btn" href="/">切换</a>
+  </div>
+</header>
+
+<main class="meeting-wrap">
+
+  <!-- 本机提示：远程访问时功能不可用 -->
+  <div class="notice notice-warn" id="remoteNotice" hidden>
+    <strong>当前是远程访问</strong>
+    <p>
+      唤起 WPS、生成本地文件等功能只能在<strong>运行本服务的这台电脑</strong>上使用。
+      你现在是用其他设备访问，因此这些按钮不可用。
+    </p>
+    <p class="notice-sub">如果你就是在一体机上，请用 <code>http://localhost:8080/meeting</code> 打开本页。</p>
+  </div>
+
+  <!-- 一、唤起 WPS -->
+  <section class="card">
+    <h2><span class="ico">📄</span>打开 WPS 办公软件</h2>
+    <p class="card-sub">
+      点击直接在本机打开 WPS。若浏览器弹出「是否允许打开」，选<strong>允许</strong>即可。
+    </p>
+
+    <div class="launch-grid" id="launchGrid">
+      <button class="launch-btn" data-target="wps" data-protocol="ksowps://">
+        <span class="lb-icon">📝</span>
+        <span class="lb-name">WPS 文字</span>
+        <span class="lb-desc">写通知、纪要、报告</span>
+      </button>
+      <button class="launch-btn" data-target="et" data-protocol="ksoet://">
+        <span class="lb-icon">📊</span>
+        <span class="lb-name">WPS 表格</span>
+        <span class="lb-desc">名单、签到、统计</span>
+      </button>
+      <button class="launch-btn" data-target="wpp" data-protocol="ksowpp://">
+        <span class="lb-icon">📽</span>
+        <span class="lb-name">WPS 演示</span>
+        <span class="lb-desc">汇报、宣讲 PPT</span>
+      </button>
+    </div>
+
+    <div class="launch-status" id="launchStatus" hidden></div>
+
+    <details class="fallback-box">
+      <summary>点了没反应？试试备选方式</summary>
+      <div class="fallback-inner">
+        <p>
+          部分浏览器或安全策略会拦截程序唤起（表现为点了没反应、也不报错）。
+          这时可以改用本机接口直接启动，<strong>启动的是你刚才点的那个组件</strong>。
+        </p>
+        <button class="mini-btn primary" id="btnForceLaunch" type="button">
+          强制启动 WPS 文字
+        </button>
+        <p class="fallback-hint" id="fallbackHint"></p>
+      </div>
+    </details>
+  </section>
+
+  <!-- 二、会议模板 -->
+  <section class="card">
+    <h2><span class="ico">📋</span>会议材料模板</h2>
+    <p class="card-sub">
+      下载后可用 WPS 直接编辑。模板已按社区会议场景预置好格式。
+    </p>
+
+    <div class="template-list" id="templateList">
+      <div class="template-item">
+        <div class="ti-main">
+          <div class="ti-name">社区工作会议纪要</div>
+          <div class="ti-desc">时间、地点、参会人、议题、决议、待办事项</div>
+        </div>
+        <button class="mini-btn" data-tpl="minutes" type="button">下载</button>
+      </div>
+      <div class="template-item">
+        <div class="ti-main">
+          <div class="ti-name">活动签到表</div>
+          <div class="ti-desc">序号、姓名、学号、班级、联系方式、签到</div>
+        </div>
+        <button class="mini-btn" data-tpl="signin" type="button">下载</button>
+      </div>
+      <div class="template-item">
+        <div class="ti-main">
+          <div class="ti-name">活动策划方案</div>
+          <div class="ti-desc">活动主题、目的、时间地点、流程、分工、预算</div>
+        </div>
+        <button class="mini-btn" data-tpl="plan" type="button">下载</button>
+      </div>
+      <div class="template-item">
+        <div class="ti-main">
+          <div class="ti-name">值班安排表</div>
+          <div class="ti-desc">日期、星期、值班人、联系方式、备注</div>
+        </div>
+        <button class="mini-btn" data-tpl="duty" type="button">下载</button>
+      </div>
+    </div>
+    <p class="card-note">
+      模板为 <code>.csv</code> 格式（WPS/Excel 均可直接打开编辑）。
+      用 WPS 表格打开后「另存为」即可转成 <code>.xlsx</code>。
+    </p>
+  </section>
+
+  <!-- 三、导出当前知识库 -->
+  <section class="card">
+    <h2><span class="ico">📤</span>导出知识库</h2>
+    <p class="card-sub">
+      把当前的通知、活动、常见问题导出成表格，方便开会时查阅或打印。
+    </p>
+    <div class="export-grid">
+      <button class="mini-btn" data-export="notices" type="button">导出通知（CSV）</button>
+      <button class="mini-btn" data-export="activities" type="button">导出活动（CSV）</button>
+      <button class="mini-btn" data-export="faqs" type="button">导出常见问题（CSV）</button>
+      <button class="mini-btn" data-export="venues" type="button">导出场所（CSV）</button>
+    </div>
+    <p class="card-note">
+      导出内容与智能体当前知识库一致。若表格里中文显示乱码，
+      用 WPS 的「数据 → 导入数据」并选择 <code>UTF-8</code> 编码即可。
+    </p>
+  </section>
+
+  <!-- 四、常用链接 -->
+  <section class="card">
+    <h2><span class="ico">🔗</span>会议常用入口</h2>
+    <div class="link-grid">
+      <a class="link-item" href="/teacher" target="_blank" rel="noopener">
+        <span>📊</span><span>教师端看板</span>
+      </a>
+      <a class="link-item" href="/student" target="_blank" rel="noopener">
+        <span>🎓</span><span>学生端预览</span>
+      </a>
+      <a class="link-item" href="https://jsjxy.hbuas.edu.cn/xsgz.htm" target="_blank" rel="noopener">
+        <span>🌐</span><span>学院学工动态</span>
+      </a>
+      <a class="link-item" href="https://www.hbuas.edu.cn/" target="_blank" rel="noopener">
+        <span>🏫</span><span>学校官网</span>
+      </a>
+    </div>
+  </section>
+
+</main>
+
+<div class="toast" id="toast" hidden></div>
+
+<script src="/meeting.js"></script>
+</body>
+</html>

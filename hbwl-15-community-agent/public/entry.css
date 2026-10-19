@@ -148,6 +148,58 @@
 }
 .role-card:hover .role-enter { color: var(--hbuas-green-dark); }
 
+/* ---- 会议工具入口 ---- */
+.meeting-entry {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  max-width: 860px;
+  margin-top: 22px;
+  padding: 16px 22px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--hbuas-green);
+  border-radius: var(--radius);
+  text-decoration: none;
+  color: inherit;
+  box-shadow: var(--shadow);
+  transition: all .16s;
+}
+.meeting-entry:hover {
+  border-color: var(--hbuas-green);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.me-icon { font-size: 1.5em; flex-shrink: 0; }
+
+.me-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+}
+.me-text strong {
+  font-size: .94em;
+  color: var(--hbuas-green-deep);
+  font-weight: 600;
+}
+.me-text span {
+  font-size: .78em;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.me-arrow {
+  font-size: 1.1em;
+  color: var(--hbuas-green);
+  flex-shrink: 0;
+  transition: transform .16s;
+}
+.meeting-entry:hover .me-arrow { transform: translateX(3px); }
+
 /* ---- 页脚 ---- */
 .entry-foot {
   margin-top: auto;

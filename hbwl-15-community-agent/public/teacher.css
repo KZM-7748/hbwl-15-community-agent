@@ -288,6 +288,91 @@
   color: var(--text-dim); font-variant-numeric: tabular-nums;
 }
 
+/* ---- 学生反馈统计 ---- */
+.fb-summary { margin-bottom: 14px; }
+.fb-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(88px, 1fr));
+  gap: 10px;
+}
+
+.fb-stat {
+  background: var(--hbuas-green-pale);
+  border: 1px solid #dcebe1;
+  border-radius: var(--radius-sm);
+  padding: 12px 8px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fb-num {
+  font-size: 1.42em;
+  font-weight: 600;
+  color: var(--hbuas-green-deep);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.fb-num.good { color: #0f7b46; }
+.fb-num.mid { color: #b45309; }
+.fb-num.bad { color: var(--danger); }
+
+.fb-txt { font-size: .74em; color: var(--text-dim); }
+
+/* ---- 未命中问题：补充答案 ---- */
+.missed-row {
+  align-items: center;
+  gap: 8px;
+}
+.missed-row .qtext {
+  /* 长问题允许换行，不要挤掉按钮 */
+  word-break: break-word;
+}
+.missed-row .add-faq {
+  flex-shrink: 0;
+  border-color: var(--hbuas-green);
+  color: var(--hbuas-green-dark);
+  background: var(--hbuas-green-pale);
+  font-weight: 500;
+}
+.missed-row .add-faq:hover {
+  background: var(--hbuas-green);
+  color: #fff;
+  border-color: var(--hbuas-green);
+}
+
+/* 从问题创建 FAQ 时的提示条 */
+.from-question {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--hbuas-green-pale);
+  border: 1px solid #d6e6dc;
+  border-left: 3px solid var(--hbuas-green);
+  border-radius: var(--radius-sm);
+  padding: 13px 16px;
+  margin-bottom: 18px;
+}
+.fq-label {
+  font-size: .74em;
+  color: var(--hbuas-green);
+  font-weight: 600;
+  letter-spacing: .04em;
+}
+.fq-text {
+  font-size: .95em;
+  color: var(--text);
+  font-weight: 600;
+  line-height: 1.5;
+  word-break: break-word;
+}
+.fq-hint {
+  font-size: .78em;
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+
 /* ================= 列表 ================= */
 
 .item-list { display: flex; flex-direction: column; gap: 10px; }

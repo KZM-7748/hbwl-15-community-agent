@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>15栋社区智能体 · 访问方式</title>
+<style>
+  :root { --g:#286840; --gd:#143a23; --gl:#eaf3ed; --bd:#e2e8e4; --tx:#1f2a24; --dim:#5f6b64; }
+  * { box-sizing: border-box; }
+  body { margin:0; padding:32px 20px 60px; font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+         color:var(--tx); background:#f5f7f5; line-height:1.75; }
+  .wrap { max-width:720px; margin:0 auto; }
+  header { text-align:center; margin-bottom:28px; }
+  h1 { font-size:1.5rem; color:var(--gd); margin:0 0 8px; font-weight:600; }
+  .sub { color:var(--dim); font-size:.9rem; }
+  .card { background:#fff; border:1px solid var(--bd); border-radius:12px; padding:24px; margin-bottom:18px;
+          box-shadow:0 1px 3px rgba(20,58,35,.06); }
+  .card h2 { font-size:1.02rem; color:var(--gd); margin:0 0 14px; font-weight:600;
+             display:flex; align-items:center; gap:8px; }
+  .card h2::before { content:""; width:3px; height:1em; background:var(--g); border-radius:2px; }
+  .big-url { display:block; font-size:1.15rem; font-weight:600; color:var(--g); text-decoration:none;
+             background:var(--gl); border:1px solid #d6e6dc; border-radius:9px; padding:14px 18px;
+             text-align:center; word-break:break-all; margin:6px 0 12px; }
+  .big-url:hover { background:#dcebe2; }
+  .qr { text-align:center; }
+  .qr svg { width:180px; height:180px; border:1px solid var(--bd); border-radius:9px; padding:8px; background:#fff; }
+  .qr p { font-size:.84rem; color:var(--dim); margin:10px 0 0; }
+  table { width:100%; border-collapse:collapse; font-size:.85rem; }
+  th, td { padding:9px 10px; text-align:left; border-bottom:1px solid var(--bd); }
+  th { color:var(--dim); font-weight:500; font-size:.8rem; }
+  tr.dim td { color:#9aa8a1; }
+  tr.dim code { color:#9aa8a1; }
+  code { font-family:ui-monospace,Consolas,monospace; font-size:.88em;
+         background:var(--gl); color:var(--gd); padding:2px 6px; border-radius:4px; }
+  tr.dim code { background:#f3f5f4; }
+  .note { background:#fff8e6; border:1px solid #f0dfb0; border-radius:9px; padding:14px 18px;
+          font-size:.85rem; color:#6b5320; margin-top:14px; }
+  .note b { color:#8a6a15; }
+  .steps { counter-reset:s; list-style:none; padding:0; margin:0; }
+  .steps li { counter-increment:s; position:relative; padding-left:34px; margin-bottom:11px; font-size:.9rem; }
+  .steps li::before { content:counter(s); position:absolute; left:0; top:1px; width:22px; height:22px;
+                      background:var(--g); color:#fff; border-radius:50%; text-align:center;
+                      line-height:22px; font-size:.78rem; font-weight:600; }
+  .status { display:inline-block; font-size:.78rem; padding:3px 10px; border-radius:20px;
+            background:#e8f5ee; color:#0f7b46; border:1px solid #bfe3ce; }
+  .status.bad { background:#fef2f2; color:#b91c1c; border-color:#fecaca; }
+  footer { text-align:center; font-size:.78rem; color:#9aa8a1; margin-top:30px; }
+  @media (max-width:520px) { body { padding:20px 14px 40px; } .card { padding:18px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>15栋一站式社区智能体</h1>
+    <div class="sub">湖北文理学院 · 计算机工程学院</div>
+  </header>
+
+  <div class="card">
+    <h2>服务状态</h2>
+    <p style="margin:0 0 10px">
+      <span class="status">✓ 服务正在运行</span>
+    </p>
+    <p style="margin:0;font-size:.85rem;color:var(--dim)">
+      可以正常访问。若对方打不开，多半是防火墙未放行，或不在同一网络。
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>手机扫码进入（推荐）</h2>
+    <div class="qr">
+      <svg xmlns="http://www.w3.org/2000/svg" width="245" height="245" viewBox="0 0 245 245" shape-rendering="crispEdges"><rect width="245" height="245" fill="#ffffff"/><g fill="#143a23"><rect x="21" y="21" width="7" height="7"/><rect x="28" y="21" width="7" height="7"/><rect x="35" y="21" width="7" height="7"/><rect x="42" y="21" width="7" height="7"/><rect x="49" y="21" width="7" height="7"/><rect x="56" y="21" width="7" height="7"/><rect x="63" y="21" width="7" height="7"/><rect x="91" y="21" width="7" height="7"/><rect x="98" y="21" width="7" height="7"/><rect x="126" y="21" width="7" height="7"/><rect x="133" y="21" width="7" height="7"/><rect x="154" y="21" width="7" height="7"/><rect x="175" y="21" width="7" height="7"/><rect x="182" y="21" width="7" height="7"/><rect x="189" y="21" width="7" height="7"/><rect x="196" y="21" width="7" height="7"/><rect x="203" y="21" width="7" height="7"/><rect x="210" y="21" width="7" height="7"/><rect x="217" y="21" width="7" height="7"/><rect x="21" y="28" width="7" height="7"/><rect x="63" y="28" width="7" height="7"/><rect x="91" y="28" width="7" height="7"/><rect x="98" y="28" width="7" height="7"/><rect x="105" y="28" width="7" height="7"/><rect x="147" y="28" width="7" height="7"/><rect x="175" y="28" width="7" height="7"/><rect x="217" y="28" width="7" height="7"/><rect x="21" y="35" width="7" height="7"/><rect x="35" y="35" width="7" height="7"/><rect x="42" y="35" width="7" height="7"/><rect x="49" y="35" width="7" height="7"/><rect x="63" y="35" width="7" height="7"/><rect x="77" y="35" width="7" height="7"/><rect x="84" y="35" width="7" height="7"/><rect x="91" y="35" width="7" height="7"/><rect x="98" y="35" width="7" height="7"/><rect x="119" y="35" width="7" height="7"/><rect x="133" y="35" width="7" height="7"/><rect x="147" y="35" width="7" height="7"/><rect x="175" y="35" width="7" height="7"/><rect x="189" y="35" width="7" height="7"/><rect x="196" y="35" width="7" height="7"/><rect x="203" y="35" width="7" height="7"/><rect x="217" y="35" width="7" height="7"/><rect x="21" y="42" width="7" height="7"/><rect x="35" y="42" width="7" height="7"/><rect x="42" y="42" width="7" height="7"/><rect x="49" y="42" width="7" height="7"/><rect x="63" y="42" width="7" height="7"/><rect x="77" y="42" width="7" height="7"/><rect x="91" y="42" width="7" height="7"/><rect x="98" y="42" width="7" height="7"/><rect x="105" y="42" width="7" height="7"/><rect x="133" y="42" width="7" height="7"/><rect x="140" y="42" width="7" height="7"/><rect x="147" y="42" width="7" height="7"/><rect x="154" y="42" width="7" height="7"/><rect x="161" y="42" width="7" height="7"/><rect x="175" y="42" width="7" height="7"/><rect x="189" y="42" width="7" height="7"/><rect x="196" y="42" width="7" height="7"/><rect x="203" y="42" width="7" height="7"/><rect x="217" y="42" width="7" height="7"/><rect x="21" y="49" width="7" height="7"/><rect x="35" y="49" width="7" height="7"/><rect x="42" y="49" width="7" height="7"/><rect x="49" y="49" width="7" height="7"/><rect x="63" y="49" width="7" height="7"/><rect x="77" y="49" width="7" height="7"/><rect x="91" y="49" width="7" height="7"/><rect x="112" y="49" width="7" height="7"/><rect x="119" y="49" width="7" height="7"/><rect x="126" y="49" width="7" height="7"/><rect x="140" y="49" width="7" height="7"/><rect x="147" y="49" width="7" height="7"/><rect x="154" y="49" width="7" height="7"/><rect x="175" y="49" width="7" height="7"/><rect x="189" y="49" width="7" height="7"/><rect x="196" y="49" width="7" height="7"/><rect x="203" y="49" width="7" height="7"/><rect x="217" y="49" width="7" height="7"/><rect x="21" y="56" width="7" height="7"/><rect x="63" y="56" width="7" height="7"/><rect x="77" y="56" width="7" height="7"/><rect x="91" y="56" width="7" height="7"/><rect x="112" y="56" width="7" height="7"/><rect x="119" y="56" width="7" height="7"/><rect x="126" y="56" width="7" height="7"/><rect x="133" y="56" width="7" height="7"/><rect x="140" y="56" width="7" height="7"/><rect x="175" y="56" width="7" height="7"/><rect x="217" y="56" width="7" height="7"/><rect x="21" y="63" width="7" height="7"/><rect x="28" y="63" width="7" height="7"/><rect x="35" y="63" width="7" height="7"/><rect x="42" y="63" width="7" height="7"/><rect x="49" y="63" width="7" height="7"/><rect x="56" y="63" width="7" height="7"/><rect x="63" y="63" width="7" height="7"/><rect x="77" y="63" width="7" height="7"/><rect x="91" y="63" width="7" height="7"/><rect x="105" y="63" width="7" height="7"/><rect x="119" y="63" width="7" height="7"/><rect x="133" y="63" width="7" height="7"/><rect x="147" y="63" width="7" height="7"/><rect x="161" y="63" width="7" height="7"/><rect x="175" y="63" width="7" height="7"/><rect x="182" y="63" width="7" height="7"/><rect x="189" y="63" width="7" height="7"/><rect x="196" y="63" width="7" height="7"/><rect x="203" y="63" width="7" height="7"/><rect x="210" y="63" width="7" height="7"/><rect x="217" y="63" width="7" height="7"/><rect x="77" y="70" width="7" height="7"/><rect x="84" y="70" width="7" height="7"/><rect x="105" y="70" width="7" height="7"/><rect x="112" y="70" width="7" height="7"/><rect x="126" y="70" width="7" height="7"/><rect x="21" y="77" width="7" height="7"/><rect x="35" y="77" width="7" height="7"/><rect x="42" y="77" width="7" height="7"/><rect x="49" y="77" width="7" height="7"/><rect x="56" y="77" width="7" height="7"/><rect x="63" y="77" width="7" height="7"/><rect x="84" y="77" width="7" height="7"/><rect x="98" y="77" width="7" height="7"/><rect x="119" y="77" width="7" height="7"/><rect x="126" y="77" width="7" height="7"/><rect x="140" y="77" width="7" height="7"/><rect x="161" y="77" width="7" height="7"/><rect x="175" y="77" width="7" height="7"/><rect x="182" y="77" width="7" height="7"/><rect x="189" y="77" width="7" height="7"/><rect x="196" y="77" width="7" height="7"/><rect x="203" y="77" width="7" height="7"/><rect x="28" y="84" width="7" height="7"/><rect x="35" y="84" width="7" height="7"/><rect x="49" y="84" width="7" height="7"/><rect x="56" y="84" width="7" height="7"/><rect x="77" y="84" width="7" height="7"/><rect x="84" y="84" width="7" height="7"/><rect x="91" y="84" width="7" height="7"/><rect x="98" y="84" width="7" height="7"/><rect x="126" y="84" width="7" height="7"/><rect x="133" y="84" width="7" height="7"/><rect x="154" y="84" width="7" height="7"/><rect x="175" y="84" width="7" height="7"/><rect x="189" y="84" width="7" height="7"/><rect x="217" y="84" width="7" height="7"/><rect x="21" y="91" width="7" height="7"/><rect x="28" y="91" width="7" height="7"/><rect x="49" y="91" width="7" height="7"/><rect x="56" y="91" width="7" height="7"/><rect x="63" y="91" width="7" height="7"/><rect x="70" y="91" width="7" height="7"/><rect x="84" y="91" width="7" height="7"/><rect x="140" y="91" width="7" height="7"/><rect x="147" y="91" width="7" height="7"/><rect x="182" y="91" width="7" height="7"/><rect x="189" y="91" width="7" height="7"/><rect x="28" y="98" width="7" height="7"/><rect x="49" y="98" width="7" height="7"/><rect x="56" y="98" width="7" height="7"/><rect x="70" y="98" width="7" height="7"/><rect x="84" y="98" width="7" height="7"/><rect x="91" y="98" width="7" height="7"/><rect x="98" y="98" width="7" height="7"/><rect x="105" y="98" width="7" height="7"/><rect x="119" y="98" width="7" height="7"/><rect x="133" y="98" width="7" height="7"/><rect x="168" y="98" width="7" height="7"/><rect x="175" y="98" width="7" height="7"/><rect x="189" y="98" width="7" height="7"/><rect x="210" y="98" width="7" height="7"/><rect x="21" y="105" width="7" height="7"/><rect x="35" y="105" width="7" height="7"/><rect x="42" y="105" width="7" height="7"/><rect x="49" y="105" width="7" height="7"/><rect x="63" y="105" width="7" height="7"/><rect x="133" y="105" width="7" height="7"/><rect x="140" y="105" width="7" height="7"/><rect x="154" y="105" width="7" height="7"/><rect x="161" y="105" width="7" height="7"/><rect x="168" y="105" width="7" height="7"/><rect x="182" y="105" width="7" height="7"/><rect x="196" y="105" width="7" height="7"/><rect x="203" y="105" width="7" height="7"/><rect x="35" y="112" width="7" height="7"/><rect x="56" y="112" width="7" height="7"/><rect x="70" y="112" width="7" height="7"/><rect x="77" y="112" width="7" height="7"/><rect x="91" y="112" width="7" height="7"/><rect x="98" y="112" width="7" height="7"/><rect x="112" y="112" width="7" height="7"/><rect x="119" y="112" width="7" height="7"/><rect x="126" y="112" width="7" height="7"/><rect x="154" y="112" width="7" height="7"/><rect x="175" y="112" width="7" height="7"/><rect x="189" y="112" width="7" height="7"/><rect x="203" y="112" width="7" height="7"/><rect x="217" y="112" width="7" height="7"/><rect x="28" y="119" width="7" height="7"/><rect x="49" y="119" width="7" height="7"/><rect x="63" y="119" width="7" height="7"/><rect x="70" y="119" width="7" height="7"/><rect x="105" y="119" width="7" height="7"/><rect x="112" y="119" width="7" height="7"/><rect x="119" y="119" width="7" height="7"/><rect x="126" y="119" width="7" height="7"/><rect x="133" y="119" width="7" height="7"/><rect x="168" y="119" width="7" height="7"/><rect x="175" y="119" width="7" height="7"/><rect x="203" y="119" width="7" height="7"/><rect x="49" y="126" width="7" height="7"/><rect x="56" y="126" width="7" height="7"/><rect x="98" y="126" width="7" height="7"/><rect x="112" y="126" width="7" height="7"/><rect x="126" y="126" width="7" height="7"/><rect x="147" y="126" width="7" height="7"/><rect x="154" y="126" width="7" height="7"/><rect x="168" y="126" width="7" height="7"/><rect x="182" y="126" width="7" height="7"/><rect x="210" y="126" width="7" height="7"/><rect x="21" y="133" width="7" height="7"/><rect x="28" y="133" width="7" height="7"/><rect x="35" y="133" width="7" height="7"/><rect x="42" y="133" width="7" height="7"/><rect x="49" y="133" width="7" height="7"/><rect x="56" y="133" width="7" height="7"/><rect x="63" y="133" width="7" height="7"/><rect x="70" y="133" width="7" height="7"/><rect x="77" y="133" width="7" height="7"/><rect x="98" y="133" width="7" height="7"/><rect x="119" y="133" width="7" height="7"/><rect x="126" y="133" width="7" height="7"/><rect x="140" y="133" width="7" height="7"/><rect x="154" y="133" width="7" height="7"/><rect x="161" y="133" width="7" height="7"/><rect x="168" y="133" width="7" height="7"/><rect x="203" y="133" width="7" height="7"/><rect x="21" y="140" width="7" height="7"/><rect x="28" y="140" width="7" height="7"/><rect x="35" y="140" width="7" height="7"/><rect x="49" y="140" width="7" height="7"/><rect x="56" y="140" width="7" height="7"/><rect x="77" y="140" width="7" height="7"/><rect x="91" y="140" width="7" height="7"/><rect x="98" y="140" width="7" height="7"/><rect x="105" y="140" width="7" height="7"/><rect x="126" y="140" width="7" height="7"/><rect x="133" y="140" width="7" height="7"/><rect x="154" y="140" width="7" height="7"/><rect x="168" y="140" width="7" height="7"/><rect x="175" y="140" width="7" height="7"/><rect x="189" y="140" width="7" height="7"/><rect x="196" y="140" width="7" height="7"/><rect x="203" y="140" width="7" height="7"/><rect x="217" y="140" width="7" height="7"/><rect x="21" y="147" width="7" height="7"/><rect x="35" y="147" width="7" height="7"/><rect x="42" y="147" width="7" height="7"/><rect x="49" y="147" width="7" height="7"/><rect x="63" y="147" width="7" height="7"/><rect x="91" y="147" width="7" height="7"/><rect x="175" y="147" width="7" height="7"/><rect x="196" y="147" width="7" height="7"/><rect x="203" y="147" width="7" height="7"/><rect x="21" y="154" width="7" height="7"/><rect x="70" y="154" width="7" height="7"/><rect x="84" y="154" width="7" height="7"/><rect x="98" y="154" width="7" height="7"/><rect x="105" y="154" width="7" height="7"/><rect x="119" y="154" width="7" height="7"/><rect x="133" y="154" width="7" height="7"/><rect x="154" y="154" width="7" height="7"/><rect x="168" y="154" width="7" height="7"/><rect x="175" y="154" width="7" height="7"/><rect x="189" y="154" width="7" height="7"/><rect x="210" y="154" width="7" height="7"/><rect x="21" y="161" width="7" height="7"/><rect x="42" y="161" width="7" height="7"/><rect x="63" y="161" width="7" height="7"/><rect x="98" y="161" width="7" height="7"/><rect x="105" y="161" width="7" height="7"/><rect x="140" y="161" width="7" height="7"/><rect x="161" y="161" width="7" height="7"/><rect x="168" y="161" width="7" height="7"/><rect x="175" y="161" width="7" height="7"/><rect x="182" y="161" width="7" height="7"/><rect x="189" y="161" width="7" height="7"/><rect x="203" y="161" width="7" height="7"/><rect x="210" y="161" width="7" height="7"/><rect x="217" y="161" width="7" height="7"/><rect x="77" y="168" width="7" height="7"/><rect x="91" y="168" width="7" height="7"/><rect x="98" y="168" width="7" height="7"/><rect x="112" y="168" width="7" height="7"/><rect x="119" y="168" width="7" height="7"/><rect x="126" y="168" width="7" height="7"/><rect x="147" y="168" width="7" height="7"/><rect x="154" y="168" width="7" height="7"/><rect x="161" y="168" width="7" height="7"/><rect x="189" y="168" width="7" height="7"/><rect x="196" y="168" width="7" height="7"/><rect x="203" y="168" width="7" height="7"/><rect x="210" y="168" width="7" height="7"/><rect x="217" y="168" width="7" height="7"/><rect x="21" y="175" width="7" height="7"/><rect x="28" y="175" width="7" height="7"/><rect x="35" y="175" width="7" height="7"/><rect x="42" y="175" width="7" height="7"/><rect x="49" y="175" width="7" height="7"/><rect x="56" y="175" width="7" height="7"/><rect x="63" y="175" width="7" height="7"/><rect x="112" y="175" width="7" height="7"/><rect x="119" y="175" width="7" height="7"/><rect x="126" y="175" width="7" height="7"/><rect x="154" y="175" width="7" height="7"/><rect x="161" y="175" width="7" height="7"/><rect x="175" y="175" width="7" height="7"/><rect x="189" y="175" width="7" height="7"/><rect x="196" y="175" width="7" height="7"/><rect x="203" y="175" width="7" height="7"/><rect x="21" y="182" width="7" height="7"/><rect x="63" y="182" width="7" height="7"/><rect x="77" y="182" width="7" height="7"/><rect x="91" y="182" width="7" height="7"/><rect x="98" y="182" width="7" height="7"/><rect x="112" y="182" width="7" height="7"/><rect x="126" y="182" width="7" height="7"/><rect x="133" y="182" width="7" height="7"/><rect x="147" y="182" width="7" height="7"/><rect x="161" y="182" width="7" height="7"/><rect x="189" y="182" width="7" height="7"/><rect x="217" y="182" width="7" height="7"/><rect x="21" y="189" width="7" height="7"/><rect x="35" y="189" width="7" height="7"/><rect x="42" y="189" width="7" height="7"/><rect x="49" y="189" width="7" height="7"/><rect x="63" y="189" width="7" height="7"/><rect x="77" y="189" width="7" height="7"/><rect x="84" y="189" width="7" height="7"/><rect x="105" y="189" width="7" height="7"/><rect x="119" y="189" width="7" height="7"/><rect x="126" y="189" width="7" height="7"/><rect x="133" y="189" width="7" height="7"/><rect x="140" y="189" width="7" height="7"/><rect x="161" y="189" width="7" height="7"/><rect x="168" y="189" width="7" height="7"/><rect x="175" y="189" width="7" height="7"/><rect x="182" y="189" width="7" height="7"/><rect x="189" y="189" width="7" height="7"/><rect x="196" y="189" width="7" height="7"/><rect x="203" y="189" width="7" height="7"/><rect x="217" y="189" width="7" height="7"/><rect x="21" y="196" width="7" height="7"/><rect x="35" y="196" width="7" height="7"/><rect x="42" y="196" width="7" height="7"/><rect x="49" y="196" width="7" height="7"/><rect x="63" y="196" width="7" height="7"/><rect x="77" y="196" width="7" height="7"/><rect x="133" y="196" width="7" height="7"/><rect x="147" y="196" width="7" height="7"/><rect x="161" y="196" width="7" height="7"/><rect x="168" y="196" width="7" height="7"/><rect x="182" y="196" width="7" height="7"/><rect x="21" y="203" width="7" height="7"/><rect x="35" y="203" width="7" height="7"/><rect x="42" y="203" width="7" height="7"/><rect x="49" y="203" width="7" height="7"/><rect x="63" y="203" width="7" height="7"/><rect x="77" y="203" width="7" height="7"/><rect x="91" y="203" width="7" height="7"/><rect x="105" y="203" width="7" height="7"/><rect x="112" y="203" width="7" height="7"/><rect x="119" y="203" width="7" height="7"/><rect x="126" y="203" width="7" height="7"/><rect x="154" y="203" width="7" height="7"/><rect x="161" y="203" width="7" height="7"/><rect x="175" y="203" width="7" height="7"/><rect x="189" y="203" width="7" height="7"/><rect x="196" y="203" width="7" height="7"/><rect x="210" y="203" width="7" height="7"/><rect x="21" y="210" width="7" height="7"/><rect x="63" y="210" width="7" height="7"/><rect x="84" y="210" width="7" height="7"/><rect x="91" y="210" width="7" height="7"/><rect x="119" y="210" width="7" height="7"/><rect x="133" y="210" width="7" height="7"/><rect x="161" y="210" width="7" height="7"/><rect x="168" y="210" width="7" height="7"/><rect x="182" y="210" width="7" height="7"/><rect x="189" y="210" width="7" height="7"/><rect x="210" y="210" width="7" height="7"/><rect x="21" y="217" width="7" height="7"/><rect x="28" y="217" width="7" height="7"/><rect x="35" y="217" width="7" height="7"/><rect x="42" y="217" width="7" height="7"/><rect x="49" y="217" width="7" height="7"/><rect x="56" y="217" width="7" height="7"/><rect x="63" y="217" width="7" height="7"/><rect x="77" y="217" width="7" height="7"/><rect x="91" y="217" width="7" height="7"/><rect x="105" y="217" width="7" height="7"/><rect x="112" y="217" width="7" height="7"/><rect x="119" y="217" width="7" height="7"/><rect x="140" y="217" width="7" height="7"/><rect x="196" y="217" width="7" height="7"/><rect x="203" y="217" width="7" height="7"/></g></svg>
+      <p>手机需与本机连同一个 WiFi / 局域网</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>直接发这个网址给学生</h2>
+    <a class="big-url" href="http://192.168.1.2:8080/student" target="_blank" rel="noopener">http://192.168.1.2:8080/student</a>
+    <p style="margin:0;font-size:.85rem;color:var(--dim)">
+      学生端：查通知、问办事流程、看活动。<br>
+      入口页（可选角色）：<a href="http://192.168.1.2:8080" target="_blank" rel="noopener" style="color:var(--g)">http://192.168.1.2:8080</a>
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>教师端（需要口令）</h2>
+    <a class="big-url" href="http://192.168.1.2:8080/teacher" target="_blank" rel="noopener">http://192.168.1.2:8080/teacher</a>
+    <p style="margin:0;font-size:.85rem;color:var(--dim)">
+      数据看板 + 知识库维护。口令见 <code>data/_config.json</code> 的 <code>teacherPin</code>。
+      <b>正式使用前请修改默认口令。</b>
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>本机所有可访问地址</h2>
+    <table>
+      <thead><tr><th>网址</th><th>网卡</th><th>可用范围</th></tr></thead>
+      <tbody>
+<tr class="ok">
+      <td><code>http://192.168.1.2:8080</code></td>
+      <td>以太网</td>
+      <td>局域网（同一 WiFi 可用）</td>
+    </tr>
+<tr class="dim">
+      <td><code>http://100.64.95.62:8080</code></td>
+      <td>宽带连接</td>
+      <td>运营商大内网（通常外部不可访问）</td>
+    </tr>
+      </tbody>
+    </table>
+    <div class="note">
+      <b>关于访问范围：</b><br>
+      · <b>同一 WiFi / 局域网</b>的电脑和手机，用「192.168.x.x」或「10.x.x.x」开头的网址即可访问。<br>
+      · <b>校外或不同网络</b>的人访问不了这些地址——需要先做内网穿透或部署到公网，见 <code>部署指南.md</code>。<br>
+      · 若同一 WiFi 也打不开，通常是 <b>Windows 防火墙</b>没放行，需以管理员身份运行：<br>
+      <code>netsh advfirewall firewall add rule name="15栋社区智能体" dir=in action=allow protocol=TCP localport=8080</code>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>对方打不开？按顺序检查</h2>
+    <ol class="steps">
+      <li>确认服务在运行——看最上面的「服务状态」是否为绿色。</li>
+      <li>确认在同一网络——手机连的是不是和电脑同一个 WiFi？</li>
+      <li>检查防火墙——以管理员身份执行上面那条 <code>netsh</code> 命令。</li>
+      <li>确认网址没抄错——IP 可能因重启而变化，重新运行 <code>node scripts/share.js</code> 生成新的。</li>
+      <li>对方在校外——这些局域网地址对他无效，需按 <code>部署指南.md</code> 做公网方案。</li>
+    </ol>
+  </div>
+
+  <footer>
+    生成时间：2026/10/17 15:49:08<br>
+    本文件由 <code>node scripts/share.js</code> 生成，可直接发给他人。
+  </footer>
+
+</div>
+</body>
+</html>

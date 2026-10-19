@@ -4,12 +4,21 @@
  * 智能体大脑 —— 意图识别 + 检索 + 回答生成
  *
  * 工作方式（三级）：
- *   1. 规则意图层：识别「通知/活动/自习预约/报修/报修/紧急」等明确意图，走专用数据通道
+ *   1. 规则意图层：识别「通知/活动/自习预约/报修/紧急」等明确意图，走专用数据通道
  *   2. 检索层：BM25 检索 FAQ + 通知 + 活动 + 场地，取最相关条目
  *   3. 兜底层：置信度不足时给出引导式回答，而不是硬编一个错误答案
  *
- * 可选 LLM 增强：设置环境变量 LLM_API_KEY 后，检索结果会作为上下文交给大模型润色。
- * 未配置时完全离线运行，保证一体机断网也能用。
+ * ── 关于大模型（重要说明）────────────────────────────────
+ *   当前版本**完全离线运行，不调用任何大模型**。
+ *
+ *   constructor 中读取的 llmKey / llmBase / llmModel，
+ *   以及 stats() 返回的 llmEnabled 标志，都是**为后续接入预留的位置**：
+ *   全项目没有任何代码真正发起过大模型请求。
+ *
+ *   因此设置 LLM_API_KEY 只会让 llmEnabled 显示为 true，
+ *   不会改变任何回答行为。这一点已在文档中如实说明，
+ *   接入方案与必要性分析见「人工智能接入说明.md」。
+ * ────────────────────────────────────────────────────────
  */
 
 const fs = require('fs');
@@ -17,6 +26,19 @@ const path = require('path');
 const { SearchIndex } = require('./retrieval');
 
 const DATA_DIR = path.join(__dirname, '..', 'data');
+
+/**
+ * 本地日期（YYYY-MM-DD）。
+ * 注意不能用 toISOString()——那是 UTC 时间，
+ * 东八区在凌晨 0–8 点之间会得到「昨天」的日期，
+ * 导致活动状态的判断偏差一天。
+ */
+function todayStr(d = new Date()) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
 
 function loadJSON(name) {
   const p = path.join(DATA_DIR, name);
@@ -103,6 +125,33 @@ const INTENTS = [
 
 class CommunityAgent {
   constructor() {
+    // 大模型配置（与知识库无关，只需设置一次）
+    this.llmKey = process.env.LLM_API_KEY || '';
+    this.llmBase = process.env.LLM_BASE_URL || 'https://api.deepseek.com';
+    this.llmModel = process.env.LLM_MODEL || 'deepseek-chat';
+
+    // 版本号：每次重新加载知识库递增，用于确认内存数据是否为最新
+    this.revision = 0;
+    this.loadedAt = 0;
+
+    this.reload();
+  }
+
+  /**
+   * 从磁盘重新加载知识库并重建检索索引。
+   *
+   * 为什么需要这个方法：
+   *   教师端发布/修改/删除内容时，写的是 data/ 下的 JSON 文件，
+   *   而问答用的是内存中的 this.notices / this.faqs / this.index。
+   *   若不在内容变更后调用本方法，教师端改了内容、学生端却查不到，
+   *   必须重启服务才生效 —— 这会让教师端形同虚设。
+   *
+   * 调用时机：ContentManager 每次写入成功后（见 server.js）。
+   *
+   * 性能：当前知识库 62 条，重建索引约 1 ms（见 scripts/benchmark.js），
+   *       远低于人类操作间隔，无需做增量更新。
+   */
+  reload() {
     this.notices = loadJSON('notices.json');
     this.faqs = loadJSON('faq.json');
     this.activities = loadJSON('activities.json');
@@ -117,16 +166,29 @@ class CommunityAgent {
     this.sourceMap = new Map((this.sources.sources || []).map((s) => [s.id, s]));
 
     // 统一索引：所有知识进同一个 BM25 空间，用 type 区分
-    this.index = new SearchIndex();
-    for (const n of this.notices) this.index.add({ ...n, type: 'notice', text: n.title }, { weight: 1.0 });
-    for (const f of this.faqs) this.index.add({ ...f, type: 'faq', title: f.question }, { weight: 1.15 });
-    for (const a of this.activities) this.index.add({ ...a, type: 'activity' }, { weight: 1.0 });
-    for (const v of this.venues) this.index.add({ ...v, type: 'venue' }, { weight: 1.0 });
-    this.index.finalize();
+    const index = new SearchIndex();
+    for (const n of this.notices) index.add({ ...n, type: 'notice', text: n.title }, { weight: 1.0 });
+    for (const f of this.faqs) index.add({ ...f, type: 'faq', title: f.question }, { weight: 1.15 });
+    for (const a of this.activities) index.add({ ...a, type: 'activity' }, { weight: 1.0 });
+    for (const v of this.venues) index.add({ ...v, type: 'venue' }, { weight: 1.0 });
+    index.finalize();
 
-    this.llmKey = process.env.LLM_API_KEY || '';
-    this.llmBase = process.env.LLM_BASE_URL || 'https://api.deepseek.com';
-    this.llmModel = process.env.LLM_MODEL || 'deepseek-chat';
+    // 原子替换：先构建完成再赋值，避免查询过程中看到半成品索引
+    this.index = index;
+    this.revision++;
+    this.loadedAt = Date.now();
+  }
+
+  /** 知识库规模摘要，供日志与自检使用 */
+  summary() {
+    return {
+      revision: this.revision,
+      loadedAt: this.loadedAt,
+      notices: this.notices.length,
+      faqs: this.faqs.length,
+      activities: this.activities.length,
+      venues: this.venues.length,
+    };
   }
 
   /**
@@ -188,21 +250,38 @@ class CommunityAgent {
 
     // 5. 纯检索回答
     //
-    //    阈值 2.0 经实测标定：无关问题（「今天天气怎么样」等）得分 0.4—1.2，
-    //    正常问题得分 3.4 以上，空档清晰，零误判。
+    //    ── 阈值经实测标定，不是猜的 ─────────────────────────────
+    //    用 10 个正常问题 + 8 个真实缺口问题测得分分布：
+    //      正常问题：35.91 ~ 70.77（最低是「校园卡怎么办理」35.91）
+    //      缺口问题： 7.86 ~ 24.80（最高是「怎么申请助学金」24.80）
+    //    中间有 11 分的空档，因此把低置信度阈值设在 30 —— 零误判。
     //
-    //    关于「句式相似但主题不同」的问题（如「怎么办理校园卡」被
-    //    「图书馆怎么借书」以「校园卡」三字命中）：实测过两种更复杂的判据，
-    //    都无法可靠区分，反而误伤正常问题：
-    //      · 优势比（Top1 领先 Top2 的幅度）：正常问题可低至 0.015，分布重叠
-    //      · 主题词整词覆盖：正常问题误判 2/25，且「四六级报名时间」被误标
-    //    结论是词面检索无法可靠完成这一区分。因此这里不做花哨判断，
-    //    而是靠**持续补充真实内容**来消除缺口（见 README 维护章节），
-    //    并让教师端「未命中问题」看板暴露真实缺口，由人工补录。
+    //    缺口问题的典型表现（系统"以为"答上了，实际答非所问）：
+    //      「校车几点发车」   → 答「宿舍几点熄灯」      7.86
+    //      「食堂几点开门」   → 答「图书馆开放时间」   13.23
+    //      「宿舍可以养猫吗」 → 答「能不能用吹风机」   12.15
+    //
+    //    ── 三档处理 ────────────────────────────────────────────
+    //      · 低于 2.0   → 兜底，明确说「没找到」
+    //      · 低于 30    → 正常回答 + 标注 lowConfidence
+    //                     （回答里提示可能不对应，并计入教师端待补充清单）
+    //      · 30 以上    → 正常回答
+    //
+    //    低置信度仍给出回答（相邻信息往往有用），只是标明不确定。
+    //    真正判断准不准的是同学的「没用」反馈，算法只负责提示。
     if (!top || top.score < 2.0) {
       return this.fallbackReply(q, hits);
     }
-    return this.retrievalReply(q, hits);
+
+    const reply = this.retrievalReply(q, hits);
+
+    const LOW_CONFIDENCE = 30;
+    if (top.score < LOW_CONFIDENCE) {
+      reply.lowConfidence = true;
+      reply.text += '\n\n---\n💡 **这条回答可能不完全对应你的问题。**'
+        + '如果没解决你的疑问，可以换个说法再问，或点下方「👎 没用」告诉老师补充。';
+    }
+    return reply;
   }
 
   /**
@@ -303,29 +382,86 @@ class CommunityAgent {
     });
   }
 
+  /**
+   * 计算活动的「实际状态」。
+   *
+   * 为什么不能直接用 activities.json 里的 status 字段：
+   *   那是教师手工填写的静态值。一旦学院发布带截止日期的活动，
+   *   过了截止日之后 status 仍写着「报名中」，同学会白跑一趟。
+   *   实测确认过这个隐患（插入一条截止 10-10 的活动，10-17 仍显示「报名中」）。
+   *
+   * 规则（以日期为准，人工填写仅作参考）：
+   *   · 报名截止日已过，且活动日期未到  → 「报名已截止」
+   *   · 活动日期已过                     → 「已结束」
+   *   · 活动日期是今天                   → 「进行中」
+   *   · 日期为「待定」或无法解析          → 沿用人工填写的 status
+   *
+   * @returns {{status:string, expired:boolean, reason:string}}
+   */
+  effectiveStatus(a, today = todayStr()) {
+    const raw = String(a.status || '').trim();
+    const dateStr = String(a.date || '').trim();
+    const deadlineStr = String(a.deadline || '').trim();
+
+    const isRealDate = (s) => /^\d{4}-\d{2}-\d{2}$/.test(s);
+    const dateKnown = isRealDate(dateStr);
+    const deadlineKnown = isRealDate(deadlineStr);
+
+    // 活动日期已过 → 已结束
+    if (dateKnown && dateStr < today) {
+      return { status: '已结束', expired: true, reason: '活动日期已过' };
+    }
+
+    // 报名截止已过，但活动还没开始
+    if (deadlineKnown && deadlineStr < today && (!dateKnown || dateStr >= today)) {
+      // 若活动就在今天，算进行中而不是报名已截止
+      if (dateKnown && dateStr === today) {
+        return { status: '进行中', expired: false, reason: '活动今天举行' };
+      }
+      return { status: '报名已截止', expired: true, reason: `报名截止 ${deadlineStr} 已过` };
+    }
+
+    // 活动就在今天
+    if (dateKnown && dateStr === today) {
+      return { status: '进行中', expired: false, reason: '活动今天举行' };
+    }
+
+    // 日期未知（如「待定」）→ 沿用人工填写
+    if (!dateKnown) {
+      return { status: raw || '待定', expired: false, reason: '日期待定，沿用人工标注' };
+    }
+
+    // 未来活动 → 沿用人工填写（报名中 / 预告）
+    return { status: raw || '预告', expired: false, reason: '未来活动' };
+  }
+
   activitiesReply(q) {
-    // 按状态分组：进行中/报名中优先，已结束次之
-    const active = this.activities.filter((a) => a.status !== '已结束');
-    const done = this.activities.filter((a) => a.status === '已结束');
+    // 按实际状态分组：有效活动优先，已结束/已截止次之
+    const evaluated = this.activities.map((a) => ({ a, st: this.effectiveStatus(a) }));
+    const active = evaluated.filter((x) => !x.st.expired).map((x) => x.a);
+    const inactive = evaluated.filter((x) => x.st.expired).map((x) => x.a);
 
     const lines = [];
     if (active.length) {
       lines.push('🎯 **活动与计划**', '');
       for (const a of active) {
+        const st = this.effectiveStatus(a);
         const mark = a.verified === false ? '　`待学院确认`' : '';
         const credit = a.credit && a.credit !== '无' ? `　🎖 ${a.credit}` : '';
-        lines.push(`**${a.title}**　\`${a.status}\`${mark}`);
+        lines.push(`**${a.title}**　\`${st.status}\`${mark}`);
         lines.push(`　📅 ${a.date}${a.time && a.time !== '待定' ? ' ' + a.time : ''}`);
+        if (a.deadline) lines.push(`　⏰ 报名截止 ${a.deadline}`);
         lines.push(`　📍 ${a.location}${credit}`);
         lines.push(`　${a.summary}`);
         lines.push('');
       }
     }
 
-    if (done.length) {
-      lines.push('📋 **学院近期已开展活动**（参考，了解学院活动类型）', '');
-      for (const a of done.slice(0, 4)) {
-        lines.push(`· **${a.title}**（${a.date}）`);
+    if (inactive.length) {
+      lines.push('📋 **已结束 / 已截止的活动**', '');
+      for (const a of inactive.slice(0, 6)) {
+        const st = this.effectiveStatus(a);
+        lines.push(`· **${a.title}**（${a.date}）— ${st.status}`);
       }
       lines.push('');
     }
@@ -335,8 +471,8 @@ class CommunityAgent {
 
     return this.reply(lines.join('\n'), {
       intent: 'activities',
-      sources: [...active, ...done.slice(0, 4)].map((a) => ({ id: a.id, type: 'activity', title: a.title })),
-      cards: [...active, ...done.slice(0, 4)].map((a) => this.activityCard(a)),
+      sources: [...active, ...inactive.slice(0, 6)].map((a) => ({ id: a.id, type: 'activity', title: a.title })),
+      cards: [...active, ...inactive.slice(0, 6)].map((a) => this.activityCard(a)),
     });
   }
 
@@ -434,20 +570,30 @@ class CommunityAgent {
   }
 
   singleActivityReply(a) {
+    const st = this.effectiveStatus(a);
     const lines = [
-      `🎯 **${a.title}**　\`${a.status}\``,
+      `🎯 **${a.title}**　\`${st.status}\``,
       '',
       `📅 时间：${a.date} ${a.time}`,
       `📍 地点：${a.location}`,
       `🏛 主办：${a.organizer}`,
     ];
     if (a.credit && a.credit !== '无') lines.push(`🎖 认定：${a.credit}`);
-    if (a.deadline) lines.push(`⏰ **报名截止：${a.deadline}**`);
+    if (a.deadline) {
+      const passed = st.expired && st.reason.includes('报名截止');
+      lines.push(`⏰ **报名截止：${a.deadline}**${passed ? '（已过）' : ''}`);
+    }
     if (a.capacity) lines.push(`👥 名额：${a.enrolled ?? 0}/${a.capacity}`);
     lines.push('', a.detail || a.summary);
-    if (a.verified !== false) {
+
+    // 已结束/已截止的活动，明确提示不要再前往
+    if (st.expired) {
+      lines.push('', `⚠️ **本活动${st.status}**（${st.reason}），请勿再前往或报名。`);
+      lines.push('如需了解后续安排，请关注学院官网或咨询学院综合办 0710-3593152。');
+    } else if (a.verified !== false) {
       lines.push('', '报名：请关注学院官网「学生工作 → 学工动态」栏目通知。');
     }
+
     let text = lines.join('\n');
     text += this.sourceNote(a) + this.unverifiedNote(a);
     return this.reply(text, {
@@ -511,16 +657,16 @@ class CommunityAgent {
     // 来源与核实状态
     text += this.sourceNote(best) + this.unverifiedNote(best);
 
-    // 附上相关条目作为「你可能还想问」
-    const related = hits
+    // 相关条目：通过 cards 返回，由前端渲染成可点击卡片。
+    //
+    // 这里**不再**在正文里重复列一遍「你可能还想了解」——
+    // 早期版本正文列一遍、sources 渲染成标签、cards 又渲染成卡片，
+    // 同一个标题出现三次，页面显得杂乱且浪费纵向空间。
+    // 卡片可点击查看详情，比纯文本列表更有用。
+    const relatedRaw = hits
       .slice(1, 4)
       .map((h) => h.doc.raw)
-      .filter((r) => (r.title || r.question || r.name) !== title)
-      .map((r) => `· ${r.title || r.question || r.name}`);
-
-    if (related.length) {
-      text += `\n\n**你可能还想了解**\n${related.join('\n')}`;
-    }
+      .filter((r) => (r.title || r.question || r.name) !== title);
 
     return this.reply(text, {
       intent: 'retrieval',
@@ -529,7 +675,7 @@ class CommunityAgent {
         type: h.doc.raw.type,
         title: h.doc.raw.title || h.doc.raw.question || h.doc.raw.name,
       })),
-      cards: [this.cardFor(best)],
+      cards: [this.cardFor(best), ...relatedRaw.map((r) => this.cardFor(r))],
       confidence: hits[0].score,
       verified: best.verified !== false,
     });
@@ -566,22 +712,47 @@ class CommunityAgent {
 
   // ----- 卡片（供前端渲染，便于一体机大屏点击） -----
 
+  /**
+   * 把正文压成卡片上的一句话摘要。
+   *
+   * 卡片是纯文本渲染（前端用 escapeHTML），如果直接把带 Markdown 的正文塞进去，
+   * 同学会看到字面的 `**粗体**` 和成串的换行 —— 实测截图里确实出现过这个问题。
+   * 因此这里先剥掉 Markdown 标记、压平空白，再截断。
+   */
+  toSummary(text, max = 60) {
+    const flat = String(text || '')
+      .replace(/\*\*([^*]+)\*\*/g, '$1')     // 粗体
+      .replace(/`([^`]+)`/g, '$1')           // 行内代码
+      .replace(/^[#>\-\*\+]\s*/gm, '')       // 标题、引用、列表符号
+      .replace(/^\d+[.、)]\s*/gm, '')        // 有序列表
+      .replace(/^---+$/gm, ' ')              // 分隔线
+      .replace(/[\r\n]+/g, ' ')              // 换行压成空格
+      .replace(/\s{2,}/g, ' ')               // 连续空白合并
+      .trim();
+    return flat.length > max ? flat.slice(0, max) + '…' : flat;
+  }
+
   noticeCard(n) {
     return {
       id: n.id, type: 'notice', title: n.title, category: n.category,
       date: n.date, deadline: n.deadline, pinned: !!n.pinned, priority: n.priority,
       verified: n.verified !== false,
-      summary: n.content.replace(/\n/g, ' ').slice(0, 60) + (n.content.length > 60 ? '…' : ''),
+      summary: this.toSummary(n.content),
     };
   }
 
   activityCard(a) {
+    // 用「实际状态」而非人工填写的 status，避免过期活动仍显示「报名中」
+    const st = this.effectiveStatus(a);
     return {
       id: a.id, type: 'activity', title: a.title, category: a.category,
-      date: a.date, time: a.time, location: a.location, status: a.status,
+      date: a.date, time: a.time, location: a.location,
+      status: st.status,
+      expired: st.expired,
+      rawStatus: a.status,        // 保留人工标注，便于教师端对照
       deadline: a.deadline, credit: a.credit, capacity: a.capacity, enrolled: a.enrolled,
       verified: a.verified !== false,
-      summary: a.summary,
+      summary: this.toSummary(a.summary || a.detail, 60),
     };
   }
 
@@ -601,7 +772,7 @@ class CommunityAgent {
     return {
       id: item.id, type: 'faq', title: item.question, category: item.category,
       verified: item.verified !== false,
-      summary: item.answer.replace(/[*\n]/g, ' ').slice(0, 60),
+      summary: this.toSummary(item.answer, 60),
     };
   }
 

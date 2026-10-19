@@ -176,15 +176,33 @@ async function loadDashboard() {
         </div>`).join('')
       : '<div class="list-empty">暂无提问记录。<br>同学开始使用后，这里会显示高频问题。</div>';
 
-    // 未命中问题
-    $('#topMissed').innerHTML = d.queries.topMissed.length
-      ? d.queries.topMissed.map((x, i) => `
-        <div class="list-row">
+    // 待补充清单：未命中 + 被点「没用」，每条都能一键转成 FAQ
+    const gaps = d.pendingAnswers || [];
+    $('#topMissed').innerHTML = gaps.length
+      ? gaps.map((x, i) => {
+        // 标注来源：没答上 / 可能答错 / 答了但被点没用
+        const tags = [];
+        if (x.missed) tags.push(`<span class="tag plain">未命中 ${x.missed} 次</span>`);
+        if (x.low) tags.push(`<span class="tag hot">可能答错 ${x.low} 次</span>`);
+        if (x.unhelpful) tags.push(`<span class="tag warn">被点没用 ${x.unhelpful} 次</span>`);
+        return `
+        <div class="list-row missed-row">
           <span class="rank">${i + 1}</span>
-          <span class="qtext">${escapeHTML(x.q)}</span>
-          <span class="qcount">${x.n} 次</span>
-        </div>`).join('')
-      : '<div class="list-empty">暂无未命中问题。<br>智能体答不上来的问题会记录在这里，提示知识库缺口。</div>';
+          <span class="qtext">
+            ${escapeHTML(x.q)}
+            <div style="margin-top:4px">${tags.join(' ')}</div>
+            ${x.head ? `<div style="color:var(--text-light);font-size:.92em;margin-top:2px">当时回答：${escapeHTML(x.head)}</div>` : ''}
+          </span>
+          <button class="mini-btn add-faq" type="button"
+                  data-q="${escapeHTML(x.q)}">补充答案</button>
+        </div>`;
+      }).join('')
+      : '<div class="list-empty">暂无待补充问题。<br>同学问的问题如果智能体答不上来，或被点了「没用」，会出现在这里，可直接补充答案。</div>';
+
+    // 绑定「补充答案」按钮
+    $$('.add-faq').forEach((b) => {
+      b.addEventListener('click', () => openFaqFromQuestion(b.dataset.q));
+    });
 
     // 意图分布
     const intents = d.queries.intents;
@@ -202,6 +220,47 @@ async function loadDashboard() {
           <span class="bar-value">${x.n}</span>
         </div>`).join('')
       : '<div class="list-empty">暂无数据</div>';
+
+    // 学生反馈
+    const fb = d.feedback || { total: 0, helpful: 0, notHelpful: 0, satisfaction: null, topUnhelpful: [] };
+    if (fb.total === 0) {
+      $('#feedbackSummary').innerHTML =
+        '<div class="list-empty">暂无反馈。<br>同学在回答下方点「👍 有用 / 👎 没用」后，这里会显示统计。</div>';
+    } else {
+      const sat = fb.satisfaction;
+      const cls = sat === null ? '' : sat >= 80 ? 'good' : sat >= 60 ? 'mid' : 'bad';
+      $('#feedbackSummary').innerHTML = `
+        <div class="fb-stats">
+          <div class="fb-stat">
+            <span class="fb-num ${cls}">${sat === null ? '—' : sat + '%'}</span>
+            <span class="fb-txt">满意度</span>
+          </div>
+          <div class="fb-stat">
+            <span class="fb-num">${fb.total}</span>
+            <span class="fb-txt">总反馈</span>
+          </div>
+          <div class="fb-stat">
+            <span class="fb-num good">${fb.helpful}</span>
+            <span class="fb-txt">👍 有用</span>
+          </div>
+          <div class="fb-stat">
+            <span class="fb-num bad">${fb.notHelpful}</span>
+            <span class="fb-txt">👎 没用</span>
+          </div>
+        </div>`;
+    }
+
+    $('#topUnhelpful').innerHTML = fb.topUnhelpful.length
+      ? fb.topUnhelpful.map((x, i) => `
+        <div class="list-row">
+          <span class="rank">${i + 1}</span>
+          <span class="qtext">
+            ${escapeHTML(x.q)}
+            ${x.head ? `<br><span style="color:var(--text-light);font-size:.92em">当时回答：${escapeHTML(x.head)}</span>` : ''}
+          </span>
+          <span class="qcount">${x.n} 次</span>
+        </div>`).join('')
+      : '<div class="list-empty">暂无被点「没用」的问题。</div>';
 
   } catch (err) {
     toast(err.message, true);
@@ -370,6 +429,108 @@ function toArray(v) {
   if (Array.isArray(v)) return v;
   if (!v) return [];
   return String(v).split(/[、,，;；]/).map((x) => x.trim()).filter(Boolean);
+}
+
+/**
+ * 从「未命中问题」直接创建 FAQ 草稿。
+ *
+ * 为什么要有这个：看板列出未命中问题，但如果只是"看得到"，
+ * 老师还得手动切到 FAQ 页面、重新输入一遍问题——多这几步就足以让人放弃维护。
+ * 这里把整条链路打通：点一下 → 问题已填好 → 只需写答案 → 保存 → 立即生效。
+ *
+ * 预填策略：
+ *   · question：直接用同学的原始问法（这正是检索时匹配的文本）
+ *   · keywords：从问题里自动抽出关键词，省得老师再想
+ *   · answer：留空并给出填写提示，避免误存空答案
+ *   · verified：默认「待确认」，逼老师核实后再标已核实
+ */
+async function openFaqFromQuestion(rawQuestion) {
+  const q = String(rawQuestion || '').trim();
+  if (!q) { toast('问题为空', true); return; }
+
+  // 自动抽关键词：去掉疑问词与标点，剩下的词按常见切分给出
+  const STOP = /怎么|如何|什么|哪些|哪个|多少|几点|在哪|哪里|可以|能不能|有没有|需要|应该|是不是|怎么办|怎样|一下|请问|我们|学校|学院|的时候|吗|呢|啊|吧/g;
+  const cleaned = q.replace(STOP, ' ').replace(/[，。？！、,.?!；;：:\s]+/g, ' ').trim();
+  const words = cleaned.split(/\s+/).filter((w) => w.length >= 2);
+
+  // 加上原问题整体，方便同学用完整句子也能命中
+  const keywords = [...new Set([...words, q.replace(/[，。？！、,.?!；;：:]/g, '')])]
+    .filter(Boolean)
+    .slice(0, 8);
+
+  editing = { kind: 'faqs', id: null, isNew: true };
+  $('#editTitle').textContent = '从问题创建 FAQ';
+  $('#editErrors').hidden = true;
+
+  const fields = FIELDS.faqs;
+  const draft = {
+    question: q,
+    category: '',
+    answer: '',
+    keywords,
+    verified: false,
+  };
+
+  let html = `
+    <div class="from-question">
+      <span class="fq-label">来自未命中问题</span>
+      <span class="fq-text">${escapeHTML(q)}</span>
+      <span class="fq-hint">写下正确答案后保存，同学下次问同类问题就能得到回答了。</span>
+    </div>`;
+
+  for (const f of fields) {
+    const val = draft[f.k] == null ? '' : draft[f.k];
+    if (f.type === 'textarea') {
+      html += `<div class="field">
+        <label>${f.label}${f.required ? '<span class="req">*</span>' : ''}</label>
+        <textarea data-field="${f.k}" ${f.required ? 'required' : ''}
+          placeholder="${f.k === 'answer' ? '请填写准确答案。建议包含：办理流程、所需材料、办理地点、联系电话。' : ''}">${escapeHTML(val)}</textarea>
+        ${f.hint ? `<span class="hint">${f.hint}</span>` : ''}
+      </div>`;
+    } else if (f.type === 'tags') {
+      html += `<div class="field">
+        <label>${f.label}</label>
+        <input type="text" data-field="${f.k}" value="${escapeHTML(toArray(val).join('、'))}">
+        ${f.hint ? `<span class="hint">${f.hint}</span>` : ''}
+      </div>`;
+    } else {
+      html += `<div class="field">
+        <label>${f.label}${f.required ? '<span class="req">*</span>' : ''}</label>
+        <input type="text" data-field="${f.k}" value="${escapeHTML(val)}" ${f.required ? 'required' : ''}>
+        ${f.hint ? `<span class="hint">${f.hint}</span>` : ''}
+      </div>`;
+    }
+  }
+
+  // 核实状态（与常规编辑器一致）
+  html += `
+    <div class="field">
+      <label>核实状态<span class="req">*</span></label>
+      <div class="radio-row">
+        <label class="radio-opt">
+          <input type="radio" name="f-verified" data-field="verified" value="true"> 已核实
+        </label>
+        <label class="radio-opt">
+          <input type="radio" name="f-verified" data-field="verified" value="false" checked> 待确认
+        </label>
+      </div>
+      <span class="hint">
+        先按「待确认」保存也可以，学生端会显示待确认徽章；
+        核实无误后再改为「已核实」并填写来源编号。
+      </span>
+    </div>
+    <div class="field">
+      <label>来源编号</label>
+      <input type="text" data-field="sourceId" value="" placeholder="如 s008">
+      <span class="hint">标为「已核实」时必填，取自「数据来源」页的编号。</span>
+    </div>`;
+
+  $('#editForm').innerHTML = html;
+  $('#editModal').hidden = false;
+
+  // 光标直接落在「回答」输入框，省一次点击
+  const answerEl = $('#editForm').querySelector('[data-field="answer"]');
+  if (answerEl) answerEl.focus();
 }
 
 async function openEditor(kind, id) {

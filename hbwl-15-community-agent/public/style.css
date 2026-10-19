@@ -397,6 +397,20 @@ body { display: flex; flex-direction: column; overflow: hidden; }
 .bubble ul { margin: .3em 0 .65em; padding-left: 1.25em; }
 .bubble li { margin-bottom: .25em; }
 .bubble hr { border: none; border-top: 1px solid var(--border); margin: .75em 0; }
+
+/* 电话号码：手机上点击即可拨号（紧急场景下减少一次复制粘贴） */
+.tel-link {
+  color: var(--hbuas-green-dark);
+  text-decoration: none;
+  border-bottom: 1px dashed var(--hbuas-green);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.tel-link:hover { background: var(--hbuas-green-light); }
+.msg.user .bubble .tel-link {
+  color: #fff;
+  border-bottom-color: rgba(255, 255, 255, .6);
+}
 .bubble table {
   border-collapse: collapse; width: 100%; margin: .5em 0; font-size: .92em;
 }
@@ -417,6 +431,41 @@ body { display: flex; flex-direction: column; overflow: hidden; }
   gap: 6px;
   align-items: center;
 }
+
+/* --- 回答反馈（有用 / 没用）--- */
+.feedback {
+  margin-top: 11px;
+  padding-top: 9px;
+  border-top: 1px dashed var(--border-strong);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: .78em;
+}
+.fb-label { color: var(--text-light); }
+.fb-btn {
+  font: inherit;
+  font-size: .95em;
+  padding: .32em .8em;
+  border: 1px solid var(--border-strong);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all .14s;
+  white-space: nowrap;
+}
+.fb-btn:hover {
+  border-color: var(--hbuas-green);
+  color: var(--hbuas-green-dark);
+  background: var(--hbuas-green-pale);
+}
+.fb-btn:active { transform: scale(.96); }
+.fb-done { color: var(--hbuas-green); font-weight: 500; }
+
+/* 一体机触控：按钮加大 */
+body[data-mode="kiosk"] .fb-btn { padding: .45em 1.1em; font-size: 1em; }
 .source-tag {
   background: var(--hbuas-green-light);
   color: var(--hbuas-green-dark);

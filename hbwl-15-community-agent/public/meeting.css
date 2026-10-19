@@ -1,0 +1,308 @@
+/* ============================================================
+   会议工具页
+   ============================================================ */
+
+.meeting-body {
+  display: block;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--bg);
+  min-height: 100%;
+}
+
+.meeting-wrap {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: clamp(18px, 3vh, 32px) clamp(14px, 3vw, 28px) 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* ---- 通用小按钮 ----
+   注意：.mini-btn 原本定义在 teacher.css 里，会议页不引入那个文件，
+   因此这里必须自己定义一份，否则按钮会显示成浏览器默认样式。 */
+.mini-btn {
+  font: inherit;
+  font-size: .82em;
+  padding: 8px 16px;
+  border: 1px solid var(--border-strong);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all .14s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.mini-btn:hover {
+  border-color: var(--hbuas-green);
+  color: var(--hbuas-green-dark);
+  background: var(--hbuas-green-pale);
+}
+.mini-btn:active { transform: scale(.97); }
+.mini-btn:disabled { opacity: .45; cursor: not-allowed; }
+.mini-btn.primary {
+  background: var(--hbuas-green);
+  border-color: var(--hbuas-green);
+  color: #fff;
+}
+.mini-btn.primary:hover {
+  background: var(--hbuas-green-dark);
+  color: #fff;
+}
+
+/* ---- 卡片 ---- */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: clamp(18px, 2.4vw, 26px);
+  box-shadow: var(--shadow);
+}
+
+.card h2 {
+  font-size: 1.06em;
+  font-weight: 600;
+  color: var(--hbuas-green-deep);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.card h2 .ico { font-size: 1.15em; }
+
+.card-sub {
+  font-size: .86em;
+  color: var(--text-dim);
+  line-height: 1.7;
+  margin-bottom: 18px;
+}
+
+.card-note {
+  font-size: .76em;
+  color: var(--text-light);
+  line-height: 1.65;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border);
+}
+.card-note code {
+  background: var(--hbuas-green-light);
+  color: var(--hbuas-green-dark);
+  padding: .08em .38em;
+  border-radius: 4px;
+  font-family: ui-monospace, monospace;
+  font-size: .95em;
+}
+
+/* ---- 本机提示 ---- */
+.notice {
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  font-size: .87em;
+  line-height: 1.75;
+}
+.notice-warn {
+  background: #fff8e6;
+  border: 1px solid #f0dfb0;
+  color: #6b5320;
+}
+.notice strong { display: block; margin-bottom: 6px; font-size: 1.02em; }
+.notice p { margin: 0 0 6px; }
+.notice-sub { font-size: .9em; opacity: .85; }
+.notice code {
+  background: #fff;
+  border: 1px solid #e8d9a8;
+  padding: .08em .38em;
+  border-radius: 4px;
+  font-family: ui-monospace, monospace;
+}
+
+/* ---- 启动按钮 ---- */
+.launch-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px;
+}
+
+.launch-btn {
+  font: inherit;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 18px 20px;
+  background: var(--hbuas-green-pale);
+  border: 1.5px solid #d6e6dc;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all .15s;
+  text-align: left;
+  min-height: 110px;
+}
+.launch-btn:hover {
+  border-color: var(--hbuas-green);
+  background: var(--hbuas-green-light);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+.launch-btn:active { transform: translateY(0); }
+.launch-btn:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.lb-icon { font-size: 1.6em; line-height: 1; margin-bottom: 4px; }
+.lb-name {
+  font-size: .96em;
+  font-weight: 600;
+  color: var(--hbuas-green-dark);
+}
+.lb-desc {
+  font-size: .76em;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+/* ---- 启动状态 ---- */
+.launch-status {
+  margin-top: 14px;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  font-size: .85em;
+  line-height: 1.7;
+}
+.launch-status.ok {
+  background: #e8f5ee;
+  border: 1px solid #bfe3ce;
+  color: #0f7b46;
+}
+.launch-status.fail {
+  background: var(--danger-bg);
+  border: 1px solid #fecaca;
+  color: var(--danger);
+}
+
+/* ---- 备选方式 ---- */
+.fallback-box {
+  margin-top: 18px;
+  border-top: 1px dashed var(--border);
+  padding-top: 14px;
+}
+.fallback-box summary {
+  font-size: .84em;
+  color: var(--text-dim);
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+}
+.fallback-box summary::-webkit-details-marker { display: none; }
+.fallback-box summary::before {
+  content: "▸ ";
+  color: var(--hbuas-green);
+}
+.fallback-box[open] summary::before { content: "▾ "; }
+.fallback-box summary:hover { color: var(--hbuas-green-dark); }
+
+.fallback-inner {
+  padding: 14px 0 0 14px;
+  font-size: .82em;
+  color: var(--text-dim);
+  line-height: 1.75;
+}
+.fallback-inner p { margin: 0 0 10px; }
+.fallback-hint {
+  font-size: .92em;
+  color: var(--text-light);
+  margin-top: 8px !important;
+}
+
+/* ---- 模板列表 ---- */
+.template-list { display: flex; flex-direction: column; gap: 2px; }
+
+.template-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--border);
+}
+.template-item:last-child { border-bottom: none; }
+
+.ti-main { min-width: 0; }
+.ti-name {
+  font-size: .9em;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 3px;
+}
+.ti-desc {
+  font-size: .78em;
+  color: var(--text-dim);
+  line-height: 1.55;
+}
+
+/* ---- 导出按钮组 ---- */
+.export-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+/* ---- 常用链接 ---- */
+.link-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+.link-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 13px 16px;
+  background: var(--hbuas-green-pale);
+  border: 1px solid #dcebe1;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  color: var(--hbuas-green-dark);
+  font-size: .86em;
+  transition: all .14s;
+}
+.link-item:hover {
+  background: var(--hbuas-green-light);
+  border-color: var(--hbuas-green);
+}
+.link-item span:first-child { font-size: 1.15em; }
+
+/* ---- 提示条 ---- */
+.toast {
+  position: fixed;
+  bottom: 26px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--hbuas-green-deep);
+  color: #fff;
+  font-size: .85em;
+  padding: 11px 22px;
+  border-radius: 9px;
+  box-shadow: var(--shadow-lg);
+  z-index: 200;
+  max-width: 88vw;
+  text-align: center;
+}
+.toast[hidden] { display: none; }
+.toast.error { background: var(--danger); }
+
+/* ---- 手机端 ---- */
+@media (max-width: 640px) {
+  .meeting-wrap { padding: 14px 12px 40px; gap: 14px; }
+  .launch-grid { grid-template-columns: 1fr; }
+  .launch-btn { min-height: 84px; flex-direction: row; align-items: center; gap: 12px; }
+  .lb-icon { font-size: 1.4em; margin-bottom: 0; }
+  .template-item { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .template-item .mini-btn { align-self: flex-end; }
+}

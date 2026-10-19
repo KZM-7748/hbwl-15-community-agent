@@ -10,7 +10,8 @@
  *   PORT           监听端口（默认 8080）
  *   HOST           监听地址（默认 0.0.0.0，便于手机端同网访问）
  *   TEACHER_PIN    教师端口令（默认见 data/_config.json）
- *   LLM_API_KEY    可选，配置后启用大模型润色
+ *   LLM_API_KEY    预留位：当前版本不调用大模型，设置此项无实际作用
+ *                  （接入方案见「人工智能接入说明.md」）
  *
  * 角色：
  *   /            入口页（选择学生端 / 教师端）
@@ -26,6 +27,7 @@ const crypto = require('crypto');
 const { CommunityAgent } = require('./lib/agent');
 const { ContentManager } = require('./lib/content');
 const qrcode = require('./lib/qrcode');
+const launcher = require('./lib/launcher');
 
 const PORT = Number(process.env.PORT || 8080);
 const HOST = process.env.HOST || '0.0.0.0';
@@ -156,6 +158,7 @@ const PAGES = {
   '/': 'index.html',
   '/student': 'student.html',
   '/teacher': 'teacher.html',
+  '/meeting': 'meeting.html',
 };
 
 function serveStatic(req, res, urlPath) {
@@ -163,7 +166,8 @@ function serveStatic(req, res, urlPath) {
 
   // 页面路由
   if (PAGES[rel]) rel = '/' + PAGES[rel];
-  else if (rel === '/index.html' || rel === '/student.html' || rel === '/teacher.html') {
+  else if (rel === '/index.html' || rel === '/student.html' ||
+           rel === '/teacher.html' || rel === '/meeting.html') {
     // 直接访问 html 也允许
   } else if (!path.extname(rel)) {
     // 未知的无扩展名路径 → 回入口页
@@ -240,9 +244,53 @@ const server = http.createServer(async (req, res) => {
       const body = await readBody(req);
       const question = String(body.question || '').slice(0, 500);
       const answer = agent.ask(question, { source: body.source || 'web' });
-      // 记录问答日志，供教师端看板统计
-      if (question.trim()) content.logQuery(question, answer.intent, answer.verified);
+      // 记录问答日志，供教师端看板统计（含低置信度标记）
+      if (question.trim()) {
+        content.logQuery(question, answer.intent, answer.verified, answer.lowConfidence);
+      }
       sendJSON(res, 200, answer);
+      return;
+    }
+
+    // --- 学生对回答的反馈（有用 / 没用）---
+    // 比「未命中」更有价值：能发现「答了但答错」的情况
+    if (p === '/api/feedback' && req.method === 'POST') {
+      if (rateLimited(ip, 30, 60000)) { sendJSON(res, 429, { error: '请求过于频繁' }); return; }
+      const body = await readBody(req);
+      const ok = content.logFeedback({
+        question: body.question,
+        helpful: body.helpful === true,
+        intent: body.intent,
+        answerHead: body.answerHead,
+      });
+      sendJSON(res, ok ? 200 : 500, ok ? { ok: true } : { error: '记录失败' });
+      return;
+    }
+
+    // --- 本机办公软件（WPS）检测 ---
+    // 只允许本机访问：这个接口会暴露本机安装路径
+    if (p === '/api/wps/detect' && req.method === 'GET') {
+      if (!launcher.isLocalRequest(req)) {
+        sendJSON(res, 403, { error: '仅限本机访问', available: false });
+        return;
+      }
+      sendJSON(res, 200, launcher.detect());
+      return;
+    }
+
+    // --- 唤起本机程序（WPS 等）---
+    // 安全关键：**必须**限制本机来源。
+    // 服务默认监听 0.0.0.0（同学要从手机访问），
+    // 若此接口不限制，同网段任何人构造请求就能在你的电脑上启动程序。
+    if (p === '/api/launch' && req.method === 'POST') {
+      if (!launcher.isLocalRequest(req)) {
+        sendJSON(res, 403, { error: '仅限本机操作。远程设备无法唤起本机程序。' });
+        return;
+      }
+      const body = await readBody(req);
+      const target = String(body.target || 'wps');
+      const r = launcher.launch(target);
+      sendJSON(res, r.ok ? 200 : 500, r);
       return;
     }
 
@@ -264,7 +312,14 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     if (p === '/api/health' && req.method === 'GET') {
-      sendJSON(res, 200, { status: 'ok', uptime: Math.round(process.uptime()), version: require('./package.json').version });
+      sendJSON(res, 200, {
+        status: 'ok',
+        uptime: Math.round(process.uptime()),
+        version: require('./package.json').version,
+        // 知识库版本号：教师端每次改动会递增，可用于确认内存数据是否为最新
+        knowledgeRevision: agent.revision,
+        knowledgeLoadedAt: agent.loadedAt,
+      });
       return;
     }
 
@@ -373,7 +428,9 @@ const server = http.createServer(async (req, res) => {
         if (req.method === 'POST') {
           const body = await readBody(req);
           const r = content.create(kind, body);
-          sendJSON(res, r.ok ? 200 : 400, r);
+          // 写入成功后立即重建内存索引，否则学生端查不到新内容
+          if (r.ok) agent.reload();
+          sendJSON(res, r.ok ? 200 : 400, r.ok ? { ...r, revision: agent.revision } : r);
           return;
         }
       }
@@ -386,12 +443,14 @@ const server = http.createServer(async (req, res) => {
         if (req.method === 'PUT') {
           const body = await readBody(req);
           const r = content.update(kind, id, body);
-          sendJSON(res, r.ok ? 200 : 400, r);
+          if (r.ok) agent.reload();
+          sendJSON(res, r.ok ? 200 : 400, r.ok ? { ...r, revision: agent.revision } : r);
           return;
         }
         if (req.method === 'DELETE') {
           const r = content.remove(kind, id);
-          sendJSON(res, r.ok ? 200 : 400, r);
+          if (r.ok) agent.reload();
+          sendJSON(res, r.ok ? 200 : 400, r.ok ? { ...r, revision: agent.revision } : r);
           return;
         }
       }
@@ -447,7 +506,11 @@ server.listen(PORT, HOST, () => {
   console.log(`  知识库：通知 ${agent.notices.length} · FAQ ${agent.faqs.length}`);
   console.log(`          活动 ${agent.activities.length} · 场所 ${agent.venues.length}`);
   console.log(`  教师端口令：${process.env.TEACHER_PIN ? '（来自环境变量）' : config.teacherPin}`);
-  console.log(`  大模型增强：${agent.llmKey ? '已启用' : '未启用（离线检索模式）'}`);
+  // 如实说明：当前版本不调用大模型，即使设了 LLM_API_KEY 也是离线检索
+  console.log(`  问答模式：离线检索（本地知识库，不调用大模型）`);
+  if (agent.llmKey) {
+    console.log('           提示：检测到 LLM_API_KEY，但当前版本未接入大模型，该配置无实际作用');
+  }
   console.log(line);
   console.log('  提示：若其他机器打不开，请以管理员身份放行防火墙端口：');
   console.log(`     netsh advfirewall firewall add rule name="15栋社区智能体" ^`);

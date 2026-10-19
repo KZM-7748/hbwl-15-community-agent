@@ -202,6 +202,6 @@ const stats = agent.stats();
 console.log(`\n知识库：通知 ${stats.notices} · FAQ ${stats.faqs} · 活动 ${stats.activities} · 场所 ${stats.venues}`);
 console.log(`       共 ${stats.total} 条，已核实 ${stats.verified} 条，待确认 ${stats.unverified} 条`);
 console.log(`来源：${stats.sourceCount} 个官方渠道　数据更新：${stats.updatedAt}`);
-console.log(`大模型：${stats.llmEnabled ? '已启用' : '未启用（离线检索）'}`);
+console.log(`问答模式：离线检索（本地知识库，不调用大模型）`);
 
 process.exit(fail === 0 ? 0 : 1);

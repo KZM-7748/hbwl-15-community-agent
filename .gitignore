@@ -24,3 +24,9 @@ $RECYCLE.BIN/
 *.tmp
 *.bak
 *.log
+
+# ---- 运行时备份目录 ----
+hbwl-15-community-agent/backups/
+
+# ---- 安装包 ----
+*.zip
